@@ -1,7 +1,7 @@
 {
-  "name": "Transponder Key Database",
-  "short_name": "Transponder DB",
-  "description": "Offline inventory and vehicle reference database for transponder keys",
+  "name": "Pinky's Key Lookup",
+  "short_name": "Pinky Keys",
+  "description": "Offline key lookup and in-stock inventory for Pinky's Locksmithing",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

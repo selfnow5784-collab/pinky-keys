@@ -1,448 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Transponder Key Database - Offline inventory and vehicle reference" />
-    <title>Transponder Key Database</title>
-    <link rel="manifest" href="manifest.json" />
-    <link rel="apple-touch-icon" href="icon-192.png" />
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-
-        .tab-container {
-            display: flex;
-            background-color: #333;
-            border-bottom: 2px solid #333;
-            border-radius: 10px 10px 0 0;
-            overflow: hidden;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            cursor: pointer;
-            font-weight: bold;
-            color: hotpink;
-            background-color: black;
-            border-radius: 10px 10px 0 0;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        .tab.active {
-            background-color: hotpink;
-            color: black;
-        }
-
-        .tab-content {
-            display: none;
-            padding: 20px;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            margin-top: 10px;
-        }
-
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: left;
-        }
-
-        th {
-            background: #eee;
-            font-weight: bold;
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-        }
-        
-        th:hover {
-            background: #ddd;
-        }
-        
-        th.sortable::after {
-            content: ' ⇅';
-            color: #999;
-            font-size: 0.8em;
-        }
-        
-        th.sorted-asc::after {
-            content: ' ▲';
-            color: hotpink;
-        }
-        
-        th.sorted-desc::after {
-            content: ' ▼';
-            color: hotpink;
-        }
-
-        #searchInput, #inventorySearchInput, #vehicleSearchInput {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 3px solid black;
-            border-radius: 4px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        .results-section {
-            margin-bottom: 30px;
-        }
-
-        .results-section h3 {
-            color: hotpink;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-
-        .save-button {
-            background-color: hotpink;
-            color: black;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 30px;
-            font-weight: bold;
-            box-shadow: 0px 2px 5px rgba(0,0,0,0.3);
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .save-button:hover {
-            opacity: 0.9;
-        }
-
-        #saveStatus, #saveVehicleStatus {
-            margin-left: 10px;
-            color: green;
-            font-weight: bold;
-        }
-
-        .no-results {
-            padding: 20px;
-            background: white;
-            border-radius: 5px;
-            color: #666;
-        }
-
-        .stock-indicator {
-            color: green;
-            font-weight: bold;
-        }
-
-        .no-stock {
-            color: #999;
-        }
-
-        .compatible-list {
-            background: white;
-            padding: 15px;
-            margin-top: 10px;
-            border-radius: 5px;
-        }
-
-        .compatible-list h4 {
-            color: hotpink;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-
-        .compatible-list ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            column-count: 2;
-            column-gap: 20px;
-        }
-
-        .compatible-list li {
-            padding: 5px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .notes-display {
-            background: #fffacd;
-            padding: 10px;
-            margin-top: 10px;
-            border-left: 4px solid hotpink;
-            border-radius: 4px;
-        }
-
-        .notes-display strong {
-            color: hotpink;
-        }
-
-        /* Data Management Styles */
-        .data-management-container {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-        }
-
-        .file-list-container {
-            flex: 1;
-        }
-
-        .file-list-box {
-            border: 2px solid #ccc;
-            border-radius: 5px;
-            background: white;
-            height: 400px;
-            overflow-y: auto;
-            padding: 15px;
-        }
-
-        .file-item {
-            padding: 12px;
-            margin-bottom: 10px;
-            background: #f9f9f9;
-            border-radius: 5px;
-            border-left: 4px solid hotpink;
-        }
-
-        .file-item label {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            cursor: pointer;
-        }
-
-        .file-item input[type="checkbox"] {
-            margin-top: 3px;
-        }
-
-        .file-details {
-            flex: 1;
-        }
-
-        .file-name {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .file-meta {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .management-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        /* Scroll to top button */
-        .scroll-top-btn {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background-color: hotpink;
-            color: black;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            display: none;
-            z-index: 1000;
-        }
-
-        .scroll-top-btn:hover {
-            opacity: 0.8;
-        }
-
-        /* Compact expand button for grouped inventory */
-        .expand-btn {
-            background: transparent;
-            border: none;
-            color: hotpink;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .expand-btn .arrow {
-            font-size: 14px;
-            line-height: 1;
-        }
-        .expand-btn .count {
-            font-size: 12px;
-            color: #666;
-        }
-
-        @media (max-width: 600px) {
-            .tab {
-                font-size: 14px;
-                padding: 10px;
-            }
-
-            th, td {
-                font-size: 12px;
-            }
-
-            .compatible-list ul {
-                column-count: 1;
-            }
-
-            .data-management-container {
-                flex-direction: column;
-            }
-        }
-        /* ---- Added for new features (same hotpink/black style) ---- */
-        .status-bar { display:flex; gap:4px 12px; flex-wrap:wrap; font-size:12px; padding:4px 20px 0; color:#666; }
-        .status-bar .ok { color: green; font-weight: bold; }
-        .status-bar .warn { color: #c00; font-weight: bold; }
-        #saveStatus.error, #saveVehicleStatus.error { color: #c00; }
-        .danger-button { background-color: #ff6b6b !important; }
-        dialog.pink-dialog { border: 3px solid hotpink; border-radius: 10px; padding: 0; max-width: 520px; width: 92vw; }
-        dialog.pink-dialog::backdrop { background: rgba(0,0,0,0.6); }
-        .pink-dialog .dlg-head { background: black; color: hotpink; font-weight: bold; padding: 12px 15px; }
-        .pink-dialog .dlg-body { padding: 15px; max-height: 65vh; overflow-y: auto; }
-        .pink-dialog .dlg-foot { padding: 10px 15px 15px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
-        .pink-dialog label.field { display:block; font-weight:bold; margin-top:8px; }
-        .pink-dialog input[type=text] { width:100%; box-sizing:border-box; padding:8px; border:3px solid black; border-radius:4px; font-size:16px; margin-top:4px; }
-        .pink-dialog .save-button { margin-top: 0; }
-        .grey-button { background-color: #ccc !important; }
-        .warn-box { background:#fffacd; border-left:4px solid #c00; padding:8px; margin:8px 0; border-radius:4px; }
-        .info-box { background:#f9f9f9; border-left:4px solid hotpink; padding:8px; margin:8px 0; border-radius:4px; }
-        .dup-flag { color:#c00; font-size:11px; font-weight:bold; margin-left:4px; }
-        .updated-col { font-size: 11px; color: #888; white-space: nowrap; }
-        td.saving { background: #fff0f6; }
-        td.save-error { background: #ffd6d6; }
-        #toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: black; color: hotpink; padding: 12px 18px; border-radius: 30px; font-weight: bold; z-index: 2000; display: none; box-shadow: 0 4px 8px rgba(0,0,0,0.3); max-width: 90vw; }
-        #toast button { margin-left: 12px; background: hotpink; color: black; border: none; border-radius: 20px; padding: 6px 12px; font-weight: bold; cursor: pointer; }
-        #toast.error { color: #ff6b6b; }
-        .table-scroll { overflow-x: auto; }
-    </style>
-</head>
+<!doctype html>
+<!-- index.html — page layout only (tabs + empty containers). Logic lives in js/, look in styles.css. See README.md. -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pinky's Key Lookup</title><meta name="theme-color" content="#000000"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="stylesheet" href="styles.css"></head>
 <body>
-    <div class="tab-container">
-        <div id="searchTab" class="tab active" onclick="switchTab('search')">Quick Search</div>
-        <div id="inventoryTab" class="tab" onclick="switchTab('inventory')">Inventory</div>
-        <div id="vehicleTab" class="tab" onclick="switchTab('vehicle')">Vehicle Reference</div>
-        <div id="dataTab" class="tab" onclick="switchTab('data')">Data Management</div>
-    </div>
-    <div class="status-bar">
-        <span id="offlineStatus">Checking offline mode…</span>
-        <span id="storageStatus"></span>
-        <span id="backupStatus"></span>
-    </div>
-
-    <!-- Quick Search Tab -->
-    <div id="searchContent" class="tab-content active">
-        <input type="text" id="searchInput" placeholder="Search for vehicle (e.g., 2014 Chevrolet Camaro) - try Make, Model, Year" oninput="performQuickSearch()" />
-        <div style="margin-top: 10px; margin-bottom: 10px;">
-            <label style="cursor: pointer;">
-                <input type="checkbox" id="inStockOnly" onchange="performQuickSearch()" style="margin-right: 5px;">
-                Show in-stock items only
-            </label>
-        </div>
-        <div class="results-section">
-            <div id="searchResults" class="no-results">Enter a vehicle to find compatible keys...</div>
-        </div>
-    </div>
-
-    <!-- Inventory Tab -->
-    <div id="inventoryContent" class="tab-content">
-        <button class="save-button" onclick="saveInventory()">Save Changes</button>
-        <span id="saveStatus"></span>
-        <button class="save-button" onclick="exportInventory()" style="margin-left: 10px;">Export to CSV</button>
-        <div style="margin-top: 15px; margin-bottom: 10px;">
-            <button class="save-button" onclick="addNewInventoryRow()">+ Add New Row</button>
-            <button class="save-button" onclick="deleteSelectedRows('inventory')" style="margin-left: 10px; background-color: #ff6b6b;">Delete Selected</button>
-        </div>
-        <input type="text" id="inventorySearchInput" placeholder="Search inventory (e.g., Product, Make, Model, Year)" oninput="filterInventory()" style="margin-top: 15px;" />
-        <div style="margin-top: 10px; margin-bottom: 10px;">
-            <label style="cursor: pointer;">
-                <input type="checkbox" id="inventoryInStockOnly" onchange="filterInventory()" style="margin-right: 5px;">
-                Search in-stock items only
-            </label>
-        </div>
-        <div style="margin-top: 10px; margin-bottom: 10px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-            <strong>View:</strong>
-            <label style="cursor: pointer;">
-                <input type="radio" name="inventoryView" value="grouped" checked onchange="filterInventory()" style="margin-right: 5px;">
-                Grouped by Key
-            </label>
-            <label style="cursor: pointer;">
-                <input type="radio" name="inventoryView" value="vehicle" onchange="filterInventory()" style="margin-right: 5px;">
-                By Vehicle
-            </label>
-        </div>
-        <div id="inventoryTableContainer" class="table-scroll"></div>
-        <button class="scroll-top-btn" id="inventoryScrollBtn" onclick="scrollToTop()">↑</button>
-    </div>
-
-    <!-- Vehicle Reference Tab -->
-    <div id="vehicleContent" class="tab-content">
-        <button class="save-button" onclick="saveVehicles()">Save Changes</button>
-        <span id="saveVehicleStatus"></span>
-        <button class="save-button" onclick="exportVehicles()" style="margin-left: 10px;">Export to CSV</button>
-        <div style="margin-top: 15px; margin-bottom: 10px;">
-            <button class="save-button" onclick="addNewVehicleRow()">+ Add New Row</button>
-            <button class="save-button" onclick="deleteSelectedRows('vehicle')" style="margin-left: 10px; background-color: #ff6b6b;">Delete Selected</button>
-        </div>
-        <input type="text" id="vehicleSearchInput" placeholder="Search vehicles (e.g., Toyota Camry 2015)" oninput="filterVehicles()" style="margin-top: 15px;" />
-        <div id="vehicleTableContainer" class="table-scroll"></div>
-        <button class="scroll-top-btn" id="vehicleScrollBtn" onclick="scrollToTop()">↑</button>
-    </div>
-
-    <!-- Data Management Tab -->
-    <div id="dataContent" class="tab-content">
-        <h3>File Management</h3>
-        <div class="data-management-container">
-            <div class="file-list-container">
-                <h4>📁 Loaded Files:</h4>
-                <div class="file-list-box" id="fileListBox">
-                    <div style="color: #999; text-align: center; padding: 50px;">
-                        No files loaded. Import a CSV to get started.
-                    </div>
-                </div>
-            </div>
-            <div class="management-buttons">
-                <button class="save-button" onclick="document.getElementById('inventoryFileInput').click()">Import Inventory CSV</button>
-                <input type="file" id="inventoryFileInput" accept=".csv,text/csv" style="display: none;" onchange="startImport(event, 'inventory')" />
-                <button class="save-button" onclick="document.getElementById('vehicleFileInput').click()">Import Vehicle Ref CSV</button>
-                <input type="file" id="vehicleFileInput" accept=".csv,text/csv" style="display: none;" onchange="startImport(event, 'vehicle')" />
-                <button class="save-button" onclick="deleteSelectedFiles()">Delete Selected</button>
-                <button class="save-button" onclick="downloadBackup()" style="margin-top: 20px;">💾 Download Backup</button>
-                <button class="save-button" onclick="document.getElementById('restoreFileInput').click()">Restore Backup</button>
-                <input type="file" id="restoreFileInput" accept=".json,application/json" style="display: none;" onchange="restoreBackup(event)" />
-                <button class="save-button" onclick="resetEverything()" style="background-color: #ff3333; margin-top: 20px; font-size: 24px; border-radius: 8px; width: 60px; height: 60px; padding: 0;">Reset</button>
-            </div>
-        </div>
-        <div id="dataSummary" class="info-box" style="margin-top: 15px;"></div>
-    </div>
-
-    <!-- Generic dialog (import preview, add vehicle, confirmations) -->
-    <dialog id="appDialog" class="pink-dialog">
-        <div class="dlg-head" id="dlgTitle"></div>
-        <div class="dlg-body" id="dlgBody"></div>
-        <div class="dlg-foot" id="dlgFoot"></div>
-    </dialog>
-    <div id="toast"></div>
-
-    <script src="csv.js"></script>
-    <script src="app.js"></script>
-</body>
-</html>
+<header><h1>Pinky's <span>Keys</span></h1>
+<nav><button id="btn-search" class="active">Search</button><button id="btn-inventory">Inventory</button><button id="btn-reference">Reference</button><button id="btn-vehicles">Vehicles</button><button id="btn-data">Data</button></nav></header>
+<main>
+<section id="tab-search">
+  <div class="searchbar"><input id="q" type="search" placeholder="2014 camaro" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search"><button id="qClear" aria-label="clear">✕</button></div>
+  <div class="row"><label class="inline big"><input type="checkbox" id="onHandOnly"> In stock only</label></div>
+  <div id="results"></div>
+</section>
+<section id="tab-inventory" hidden>
+    <div class="row"><input id="invFilter" type="search" placeholder="Filter"><button id="invAdd" class="primary">+ Add item</button></div>
+  <div class="row"><label class="inline"><input type="checkbox" id="invInOnly"> In stock only</label><button id="invExport">Export CSV</button></div>
+  <div id="invList"></div>
+</section>
+<section id="tab-reference" hidden>
+    <div class="row"><input id="refFilter" type="search" placeholder="Filter"></div>
+  <div class="row"><label>View <select id="refView"><option value="vehicle">By vehicle</option><option value="key">By key</option></select></label>
+    <label class="inline"><input type="checkbox" id="refOnHand"> In stock only</label><label class="inline"><input type="checkbox" id="refChecked"> Only checked</label><label class="inline"><input type="checkbox" id="refShowQty"> Supplier qty</label></div>
+  <div class="row"><button id="refAdd">+ Row</button><button id="refDel" class="danger">Delete checked</button><button id="refUncheck">Uncheck all</button><button id="refExport">Export visible</button></div>
+  <div id="refTable"></div>
+</section>
+<section id="tab-vehicles" hidden>
+    <div class="row"><input id="vehFilter" type="search" placeholder="Filter"></div>
+  <div class="row"><label class="inline"><input type="checkbox" id="vehChecked"> Only checked</label><button id="vehAdd">+ Row</button><button id="vehDel" class="danger">Delete checked</button><button id="vehExport">Export visible</button></div>
+  <div id="vehTable"></div>
+</section>
+<section id="tab-data" hidden>
+  <h3>Import a CSV</h3>
+  <div class="row"><label>Import as <select id="impKind"><option value="auto">Auto-detect</option><option value="inventory">Inventory (in stock)</option><option value="catalog">Reference keys</option><option value="vehicles">Chips</option></select></label></div>
+  <div class="row"><label class="filebtn primary">Import CSV<input type="file" id="impFile" accept=".csv,text/csv" multiple></label></div>
+  <h3>Imported files</h3><div id="fileList"></div><button id="fileDel" class="danger">Delete ticked files</button>
+  <h3>Backup</h3><div class="row"><button id="bkDown">Download backup (.json)</button><label class="filebtn">Restore backup<input type="file" id="bkFile" accept=".json,application/json"></label></div>
+  <h3>Settings</h3>
+  <label class="inline big"><input type="checkbox" id="pAutosave"> Autosave</label>
+  <label class="inline big"><input type="checkbox" id="pFloating"> Floating Save / Top buttons</label>
+  <label class="inline big"><input type="checkbox" id="pDark"> Dark mode</label>
+  <label class="big">Text size <select id="pText"><option value="0.9">Smaller</option><option value="1">Normal</option><option value="1.2">Large</option><option value="1.4">Extra large</option></select></label>
+  <button id="resetAll" class="danger">Erase all data on this phone</button>
+  <h3>Help</h3><div class="help">
+  <p><b>Search</b>: tables only (no answer line): Inventory, Reference keys, Chips; the In stock column says Yes (n) / No. Tap a header to sort (again = reverse). Tap a cell to edit it (edits the real record; Save keeps it). Tap the Fits number of a key to list every vehicle it fits.</p>
+  <p><b>Inventory</b> = what is in the van (in stock); the only source of stock qty. <b>Reference</b> = supplier catalog, not stock. <b>In stock</b> column: "Yes (n)" = an Inventory item with qty n links to that key by part #/FCC; "No" = not in stock. <b>Vehicles</b> = chip per vehicle.</p>
+  <p>* after a number = model name cut off in the source file. Supplier qty is the supplier's number, not yours.</p>
+  <p>Save button: red = unsaved, green = saved. Data stays on this phone; works offline.</p></div>
+</section>
+</main>
+<div id="floats"><button id="topFab" aria-label="Back to top">▲</button><button id="saveFab" class="saved">Saved</button></div>
+<div id="toast" role="status"></div>
+<dialog id="dlg"><h3 id="dlgTitle"></h3><div id="dlgBody"></div><div id="dlgFoot"></div></dialog>
+<script src="js/util.js"></script><script src="js/csv.js"></script><script src="js/search.js"></script><script src="js/data.js"></script><script src="js/onhand.js"></script>
+<script src="js/lookup.js"></script><script src="js/db.js"></script><script src="js/store.js"></script><script src="js/ui-table.js"></script><script src="js/ui-search.js"></script>
+<script src="js/ui-inventory.js"></script><script src="js/ui-reference.js"></script><script src="js/ui-vehicles.js"></script><script src="js/ui-data.js"></script><script src="js/app.js"></script>
+</body></html>
