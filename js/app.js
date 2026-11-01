@@ -8,7 +8,7 @@
   const TABS = ['search', 'inventory', 'reference', 'vehicles', 'data', 'review'];
   let tab = 'search';
   function show(t) {
-    if (tab !== t) window.scrollTo(0, 0); tab = t; TABS.forEach(x => { $('#tab-' + x).hidden = x !== t; $('#btn-' + x).classList.toggle('active', x === t); });
+    if (tab !== t) window.scrollTo(0, 0); tab = t; saveBtn(); TABS.forEach(x => { $('#tab-' + x).hidden = x !== t; $('#btn-' + x).classList.toggle('active', x === t); });
     ({ search: () => QuickSearch.run(), inventory: InventoryUI.render, reference: ReferenceUI.render, vehicles: VehiclesUI.render, data: DataUI.renderFiles, review: ReviewUI.render })[t]();
   }
   function applyPrefs() {
@@ -16,13 +16,13 @@
     $('#floats').hidden = !p.floating; saveBtn();
   }
   function saveBtn() {
+    $('#emptyHint').hidden = Store.st.catalog.length > 0 || tab === 'data';
     const b = $('#saveFab'), u = Store.unsaved; b.classList.toggle('unsaved', u); b.classList.toggle('saved', !u);
     b.textContent = u ? 'Save' : 'Saved'; b.setAttribute('aria-label', u ? 'Unsaved changes – tap to save' : 'All changes saved');
   }
   const rebuild = U.debounce(() => { Lookup.rebuild(Store.st); if (tab === 'search') QuickSearch.run(); }, 250);
   async function boot() {
     try { await Store.load(); } catch (e) { U.toast('Could not open storage: ' + e.message, true, 10000); }
-    try { await CatalogFile.sync(); } catch (e) { U.toast('Catalog file failed: ' + e.message, true, 8000); }
     Lookup.rebuild(Store.st); applyPrefs();
     [QuickSearch, InventoryUI, ReferenceUI, VehiclesUI, DataUI, ReviewUI].forEach(m => m.init());
     TABS.forEach(t => { $('#btn-' + t).onclick = () => show(t); });

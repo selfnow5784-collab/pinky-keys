@@ -18,8 +18,10 @@
       p.rows.push(r); });
     const tokProducts = new Map(); products.forEach(p => p.tokens.forEach(t => { if (!tokProducts.has(t)) tokProducts.set(t, []); tokProducts.get(t).push(p); }));
     const links = new Map(); // productKey -> [Inventory items]
-    st.inventory.forEach(it => { const seen = new Set(); V.linkTokens(it).forEach(t => (tokProducts.get(t) || []).forEach(p => { if (seen.has(p.key)) return; seen.add(p.key);
-      if (!links.has(p.key)) links.set(p.key, []); links.get(p.key).push(it); })); });
+    const refOf = r => G.Stock ? G.Stock.ref(r) : '', refP = new Map(); // v3.6: items ticked "In stock" link by ref only
+    products.forEach(p => { const k = refOf(p.rows[0]); if (!refP.has(k)) refP.set(k, []); refP.get(k).push(p); });
+    st.inventory.forEach(it => { const seen = new Set(), add = p => { if (seen.has(p.key)) return; seen.add(p.key); if (!links.has(p.key)) links.set(p.key, []); links.get(p.key).push(it); };
+      if (it.ref) (refP.get(it.ref) || []).forEach(add); else V.linkTokens(it).forEach(t => (tokProducts.get(t) || []).forEach(add)); });
     const cat = S.buildIndex(cat0, { get: r => ({ make: r.make, model: r.model, years: r.years, text: [r.product, r.pn, r.item, r.fcc, r.chip, r.compat, r.notes].join(' ') }) });
     const veh = S.buildIndex(st.vehicles, { get: r => ({ make: r.make, model: r.model, years: r.years, text: [r.chip, r.strattec, r.notes].join(' ') }) });
     const invRows = [];

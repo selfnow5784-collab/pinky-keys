@@ -1,10 +1,10 @@
-/* ui-review.js — Review tab: supplier rows flagged as unverified (Review column not blank), from catalog.csv.
+/* ui-review.js — Review tab: supplier rows flagged as unverified (Review column not blank), from the imported review CSV.
    Editable + sortable like Reference. Clearing the Review cell = you checked the row (it then counts as normal).
    Filter = plain text match on any column. */
 (function (G) {
   'use strict';
   const { $ } = U; let table;
-  const COLS = ['src:Source', 'make:Make', 'model:Model', 'years:Years', 'product:Product', 'fcc:FCC ID', 'chip:Chip', 'freq:Frequency', 'pn:Part #', 'price:Price', 'review:Review']
+  const COLS = ['years:Year(s)', 'make:Make', 'model:Model', 'product:Product', 'src:Source', 'fcc:FCC ID', 'chip:Chip', 'freq:Frequency', 'pn:Part #', 'price:Price', 'review:Review']
     .map(x => { const [key, label] = x.split(':'); return { key, label, edit: true }; });
   let keep = new Set(); // rows stay listed until the tab is reopened, so clearing Review doesn't make them jump away
   function rows() {

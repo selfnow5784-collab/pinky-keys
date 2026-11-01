@@ -14,12 +14,13 @@
     const val = it => sk === 'fits' ? fitsTxt(it) : it[sk];
     return r.sort((a, b) => sd * (sk === 'qty' || sk === 'stock' ? (+a.qty || 0) - (+b.qty || 0) : String(val(a) || '').localeCompare(String(val(b) || ''), undefined, { numeric: true })));
   }
+  const shortFits = it => { const f = fitsTxt(it).split('; '); return f.length > 3 ? f.slice(0, 3).join('; ') + ` +${f.length - 3} more` : f.join('; '); }; // full list in Edit
   const fitsTxt = it => OnHand.allFits(it).map(f => [f.make, f.model, f.years].filter(Boolean).join(' ')).join('; ');
   function render() {
     const list = rows(), th = (k, l) => `<th data-isort="${k}" class="sortable${sk === k ? (sd > 0 ? ' asc' : ' desc') : ''}">${l}</th>`;
-    $('#invList').innerHTML = list.length ? `<div class="tscroll"><table class="sheet inv"><thead><tr>${th('stock', 'In stock')}${th('qty', 'Qty')}${th('pn', 'Part #')}${th('fits', 'Fits')}${th('name', 'Name')}<th></th></tr></thead><tbody>` +
-      list.map(it => `<tr class="vrow" data-id="${esc(it.id)}"><td class="c-stock">${+it.qty > 0 ? `Yes (${+it.qty})` : 'No'}</td><td class="qty"><button data-q="-1" aria-label="less">−</button><span class="qn">${+it.qty || 0}</span><button data-q="1" aria-label="more">+</button></td>
-        <td class="c-pn" contenteditable="true" data-k="pn">${esc(it.pn)}</td><td class="c-fits">${esc(fitsTxt(it))}</td><td class="c-nm" contenteditable="true" data-k="name">${esc(it.name)}</td><td><button class="edit" data-edit>Edit</button></td></tr>`).join('') +
+    $('#invList').innerHTML = list.length ? `<div class="tscroll"><table class="sheet inv"><thead><tr>${th('name', 'Name')}${th('qty', 'Qty')}${th('stock', 'In stock')}${th('pn', 'Part #')}${th('fits', 'Fits')}<th></th></tr></thead><tbody>` +
+      list.map(it => `<tr class="vrow" data-id="${esc(it.id)}"><td class="c-nm" contenteditable="true" data-k="name">${esc(it.name)}</td><td class="qty"><button data-q="-1" aria-label="less">−</button><span class="qn">${+it.qty || 0}</span><button data-q="1" aria-label="more">+</button></td>
+        <td class="c-stock">${+it.qty > 0 ? 'Yes' : 'No'}</td><td class="c-pn" contenteditable="true" data-k="pn">${esc(it.pn)}</td><td class="c-fits">${esc(shortFits(it))}</td><td><button class="edit" data-edit>Edit</button></td></tr>`).join('') +
       '</tbody></table></div>' : '<div class="none">No items.</div>';
   }
   const fitRow = f => `<div class="fitrow"><input placeholder="Make" value="${esc(f.make)}"><input placeholder="Model (blank = all)" value="${esc(f.model)}"><input placeholder="Years e.g. 2011-2016" value="${esc(f.years)}"><button type="button" class="x" onclick="this.parentNode.remove()">✕</button></div>`;

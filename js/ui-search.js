@@ -10,8 +10,8 @@
   const { $, esc } = U;
   let limitP = 25, limitV = 30, last = null; const sorts = {}, open = new Set();
   const COLS = {
-    inv: [['stock', 'In stock', 'num'], ['qty', 'Qty', 'num'], ['pn', 'Part #'], ['fits', 'Fits'], ['name', 'Name']],
-    key: [['stock', 'In stock', 'num'], ['name', 'Key'], ['years', 'Years'], ['model', 'Model'], ['make', 'Make'], ['fcc', 'FCC ID'], ['chip', 'Chip'], ['n', 'Fits', 'num']],
+    inv: [['name', 'Name'], ['qty', 'Qty', 'num'], ['stock', 'In stock', 'num'], ['pn', 'Part #'], ['fits', 'Fits']],
+    key: [['years', 'Year(s)'], ['make', 'Make'], ['model', 'Model'], ['name', 'Product'], ['stock', 'In stock', 'num'], ['fcc', 'FCC ID'], ['chip', 'Chip'], ['pn', 'Part #'], ['n', 'Fits', 'num']],
     veh: [['make', 'Make'], ['model', 'Model'], ['years', 'Years'], ['chip', 'Chip'], ['notes', 'Notes']] };
   const yn = q => q > 0 ? `Yes (${q})` : 'No';
   const fitText = f => [f.make, f.model, f.years].filter(Boolean).join(' ');
@@ -28,14 +28,14 @@
   }
   function invRows(r) {
     return r.onHand.map(x => { const it = x.item, q = +it.qty || 0, v = { stock: q, qty: q, pn: it.pn, name: it.name, fits: x.fit ? fitText(x.fit) : x.product ? 'via ' + x.product : '' };
-      return { v, html: `<tr class="irow" data-id="${esc(it.id)}"><td class="c-stock">${yn(q)}</td>${ed('inventory', it.id, 'qty', q, 'c-qty')}${ed('inventory', it.id, 'pn', it.pn, 'c-pn')}<td class="c-fits" data-iedit>${esc(v.fits)}</td>${ed('inventory', it.id, 'name', it.name, 'c-nm')}</tr>` }; });
+      return { v, html: `<tr class="irow" data-id="${esc(it.id)}">${ed('inventory', it.id, 'name', it.name, 'c-nm')}${ed('inventory', it.id, 'qty', q, 'c-qty')}<td class="c-stock">${q > 0 ? 'Yes' : 'No'}</td>${ed('inventory', it.id, 'pn', it.pn, 'c-pn')}<td class="c-fits" data-iedit>${esc(v.fits)}</td></tr>` }; });
   }
   function keyRows(products) {
     return products.slice(0, limitP).map(p => { const m = p.matched[0];
-      const v = { stock: p.onHandQty, name: p.name, make: m.make, model: m.model, years: m.years, fcc: m.fcc || '', chip: m.chip || '', n: p.all.length };
+      const v = { stock: p.onHandQty, name: p.name, make: m.make, model: m.model, years: m.years, fcc: m.fcc || '', chip: m.chip || '', pn: m.pn || m.item || '', n: p.all.length };
       const rest = open.has(p.key) ? p.matched.slice(1).concat(p.all.filter(x => !p.matched.includes(x)))
-        .map(x => `<tr class="exp${x.review ? ' unv' : ''}"><td></td><td></td>${ed('catalog', x.id, 'years', x.years, 'c-yr')}${ed('catalog', x.id, 'model', x.model, mcls(x))}${ed('catalog', x.id, 'make', x.make)}<td></td><td></td><td></td></tr>`).join('') : '';
-      return { v, html: `<tr class="krow${m.review ? ' unv' : ''}" data-k="${esc(p.key)}"><td class="c-stock">${yn(p.onHandQty)}</td><td class="c-name" contenteditable="true" data-ed="product|${esc(p.key)}|product">${esc(p.name)}</td>${ed('catalog', m.id, 'years', m.years, 'c-yr')}${ed('catalog', m.id, 'model', m.model, mcls(m))}${ed('catalog', m.id, 'make', m.make)}${ed('catalog', m.id, 'fcc', m.fcc)}${ed('catalog', m.id, 'chip', m.chip)}<td class="c-n" data-open>${p.all.length > 1 ? (open.has(p.key) ? '▾ ' : '▸ ') : ''}${p.all.length}</td></tr>${rest}` }; });
+        .map(x => `<tr class="exp${x.review ? ' unv' : ''}">${ed('catalog', x.id, 'years', x.years, 'c-yr')}${ed('catalog', x.id, 'make', x.make)}${ed('catalog', x.id, 'model', x.model, mcls(x))}<td></td><td></td><td></td><td></td><td></td><td></td></tr>`).join('') : '';
+      return { v, html: `<tr class="krow${m.review ? ' unv' : ''}" data-k="${esc(p.key)}">${ed('catalog', m.id, 'years', m.years, 'c-yr')}${ed('catalog', m.id, 'make', m.make)}${ed('catalog', m.id, 'model', m.model, mcls(m))}<td class="c-name" contenteditable="true" data-ed="product|${esc(p.key)}|product">${esc(p.name)}</td>${Stock.cell(m, p.onHandQty)}${ed('catalog', m.id, 'fcc', m.fcc)}${ed('catalog', m.id, 'chip', m.chip)}<td class="c-pn">${esc(v.pn)}</td><td class="c-n" data-open>${p.all.length > 1 ? (open.has(p.key) ? '▾ ' : '▸ ') : ''}${p.all.length}</td></tr>${rest}` }; });
   }
   function vehRows(r) {
     return r.vehicles.slice(0, limitV).map(x => ({ v: x, html: `<tr>${['make', 'model', 'years', 'chip', 'notes'].map(f => ed('vehicles', x.id, f, x[f])).join('')}</tr>` }));
@@ -70,8 +70,9 @@
     const R = $('#results');
     R.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.isContentEditable) { e.preventDefault(); e.target.blur(); } });
     R.addEventListener('focusout', e => { if (e.target.dataset && e.target.dataset.ed) commitEdit(e.target); });
+    R.addEventListener('change', e => { const id = e.target.dataset.stock; if (!id) return; const r = Store.byId.catalog.get(id); if (r) Stock.set(r, e.target.checked).then(run); });
     R.addEventListener('click', e => {
-      if (e.target.isContentEditable) return;
+      if (e.target.isContentEditable || e.target.closest('label.stk')) return;
       const h = e.target.closest('[data-ssort]'); if (h) { const [id, k] = h.dataset.ssort.split(':'), s = sorts[id]; sorts[id] = { k, d: s && s.k === k ? -s.d : 1 }; return render(last); }
       const ie = e.target.closest('[data-iedit]'); if (ie) { const it = Store.byId.inventory.get(ie.closest('tr').dataset.id); if (it) InventoryUI.edit(it); return; }
       const k = e.target.closest('tr.krow'); if (k) { open.has(k.dataset.k) ? open.delete(k.dataset.k) : open.add(k.dataset.k); return render(last); }

@@ -7,6 +7,7 @@
   const read = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsText(f); });
   async function importFile(file, kind) {
     const parsed = CSV.parse(await read(file));
+    if (CatalogFile.isClean(parsed.headers)) { const n = await CatalogFile.importClean(file.name, parsed); renderFiles(); U.toast(n.toLocaleString() + ' rows imported'); document.body.dataset.imported = (+document.body.dataset.imported || 0) + 1; document.body.dataset.lastImport = n; return n; }
     kind = kind === 'auto' ? Data.detectKind(parsed.headers) : kind;
     if (!kind) kind = await U.dialog('What is this file?', `<p>${esc(file.name)}: columns ${esc(parsed.headers.join(', '))}</p>`, [{ label: 'Inventory (in stock)', value: 'inventory' }, { label: 'Reference catalog', value: 'catalog' }, { label: 'Vehicle ref', value: 'vehicles' }, { label: 'Cancel', value: null }]);
     if (!kind) return;

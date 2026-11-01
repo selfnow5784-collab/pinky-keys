@@ -12,8 +12,11 @@
   'use strict';
   const { $, esc } = U;
   const QTY = { key: 'qty', label: 'Supplier qty (not stock)', edit: true, type: 'num' };
-  const COLS = [{ key: 'stock', label: 'In stock', type: 'num', get: r => onHandQty(r), fmt: q => q > 0 ? `Yes (${q})` : 'No' }, { key: 'src', label: 'Source', edit: true }, { key: 'make', label: 'Make', edit: true }, { key: 'model', label: 'Model', edit: true }, { key: 'years', label: 'Years', edit: true },
-    { key: 'product', label: 'Product', edit: true }, { key: 'fcc', label: 'FCC ID', edit: true }, { key: 'chip', label: 'Chip', edit: true }, { key: 'freq', label: 'Frequency', edit: true }, { key: 'pn', label: 'Part #', edit: true }, { key: 'price', label: 'Price', edit: true }, { key: 'notes', label: 'Notes', edit: true }];
+  // v3.6 order: Year(s), Make, Model, Product (store name), In stock (tick box), then details
+  const COLS = [{ key: 'years', label: 'Year(s)', edit: true }, { key: 'make', label: 'Make', edit: true }, { key: 'model', label: 'Model', edit: true },
+    { key: 'product', label: 'Product', edit: true }, { key: 'stock', label: 'In stock', type: 'num', stock: true, get: r => onHandQty(r) },
+    { key: 'fcc', label: 'FCC ID', edit: true }, { key: 'chip', label: 'Chip', edit: true }, { key: 'freq', label: 'Frequency', edit: true }, { key: 'pn', label: 'Part #', edit: true }, { key: 'item', label: 'Item #', edit: true },
+    { key: 'price', label: 'Price', edit: true }, { key: 'src', label: 'Source', edit: true }, { key: 'notes', label: 'Notes', edit: true }];
   // cached product key per row (recomputed only if the product name changed)
   const pk = r => Data.rowKey(r);
   let table, gPage = 0, gSort = 'product', gDir = 1, sSort = null, sDir = 1; const open = new Set();
@@ -21,7 +24,7 @@
   const onHandQty = r => Lookup.L ? (Lookup.L.links.get(pk(r)) || []).reduce((a, it) => a + (+it.qty || 0), 0) : 0;
   const onHand = r => onHandQty(r) > 0;
   const showQty = () => $('#refShowQty').checked;
-  const cols = () => showQty() ? COLS.slice(0, 6).concat([QTY], COLS.slice(6)) : COLS;
+  const cols = () => showQty() ? COLS.slice(0, 5).concat([QTY], COLS.slice(5)) : COLS;
   function visibleRows() {
     const t = $('#refFilter').value.trim(); let rows = Store.st.catalog.filter(r => !r.reviewOnly);
     if (t && Lookup.L) { const s = new Set(Search.run(t, Lookup.L.cat, Lookup.L.vocab).hits.map(e => e.r.id)); rows = rows.filter(r => s.has(r.id)); }
@@ -43,7 +46,7 @@
     const body = g.slice(gPage * size, (gPage + 1) * size).map(x => { const full = groupRows(x.key).length, all = x.rows.every(r => r.checked);
       return `<tr class="grp${all ? ' checked' : ''}" data-g="${esc(x.key)}"><td class="cb"><input type="checkbox" class="gcb" ${all ? 'checked' : ''}></td>
         <td class="gname" contenteditable="true">${esc(x.name)}</td>${showQty() ? `<td class="gqty" contenteditable="true">${x.qty}</td>` : ''}
-        <td><button class="more" data-open>${open.has(x.key) ? '▾' : '▸'} ${full}${full !== x.n ? ` (${x.n})` : ''}</button></td><td class="c-stock">${x.stock > 0 ? `Yes (${x.stock})` : 'No'}</td></tr>` +
+        <td><button class="more" data-open>${open.has(x.key) ? '▾' : '▸'} ${full}${full !== x.n ? ` (${x.n})` : ''}</button></td>${Stock.cell(x.rows[0], x.stock)}</tr>` +
         (open.has(x.key) ? `<tr class="sublist" data-g="${esc(x.key)}"><td colspan="${showQty() ? 5 : 4}"><table class="sheet sub"><thead><tr>${['make', 'model', 'years'].map(k => `<th data-ssub="${k}" class="sortable${sSort === k ? (sDir > 0 ? ' asc' : ' desc') : ''}">${k[0].toUpperCase() + k.slice(1)}</th>`).join('')}<th></th></tr></thead><tbody>${subRows(x.key).map(r => `<tr data-id="${esc(r.id)}"><td contenteditable="true" data-k="make">${esc(r.make)}</td><td contenteditable="true" data-k="model">${esc(r.model)}</td><td contenteditable="true" data-k="years">${esc(r.years)}</td><td><button class="x" data-delrow aria-label="delete vehicle">✕</button></td></tr>`).join('')}</tbody></table><button data-addveh>+ Add vehicle</button></td></tr>` : ''); }).join('');
     $('#refTable').innerHTML = pager + `<div class="tscroll"><table class="sheet grouped"><thead><tr><th class="cb"></th>${th('product', 'Key')}${showQty() ? th('qty', 'Supplier qty') : ''}${th('n', 'Vehicles')}${th('stock', 'In stock')}</tr></thead><tbody>${body || `<tr><td colspan="${showQty() ? 5 : 4}" class="empty"></td></tr>`}</tbody></table></div>` + pager;
   }
@@ -53,7 +56,7 @@
   const groupRows = k => (gIndex && gIndex.get(k)) || Store.st.catalog.filter(r => pk(r) === k);
   const subRows = k => { const r = groupRows(k); return sSort ? r.slice().sort((a, b) => sDir * String(a[sSort] || '').localeCompare(String(b[sSort] || ''), undefined, { numeric: true })) : r; };
   function init() {
-    table = Table.create({ el: $('#refTable'), kind: 'catalog', columns: COLS, rows: visibleRows, pageSize: 50, rowClass: r => r.review ? 'unv' : '', onCheck: updateCount, onEdit: (r, k) => { if (k === 'qty') setTimeout(render); } });
+    table = Table.create({ el: $('#refTable'), kind: 'catalog', columns: COLS, rows: visibleRows, pageSize: 50, rowClass: r => r.review ? 'unv' : '', onCheck: updateCount, onStock: () => render(), onEdit: (r, k) => { if (k === 'qty') setTimeout(render); } });
     const again = U.debounce(() => { table.page = 0; gPage = 0; render(); }, 200);
     $('#refFilter').addEventListener('input', again); ['#refOnHand', '#refChecked', '#refView', '#refShowQty'].forEach(s => $(s).addEventListener('change', () => { table.page = 0; gPage = 0; render(); }));
     $('#refAdd').onclick = () => { const r = Store.add('catalog', [{ make: '', model: '', years: '', product: 'NEW KEY – edit me', compat: '', qty: 0, notes: '', checked: true }])[0]; $('#refChecked').checked = true; $('#refView').value = 'vehicle'; render(); U.toast('New row added (shown with "only checked")'); };
@@ -73,6 +76,7 @@
       if (e.target.closest('[data-delrow]')) { Store.remove('catalog', [e.target.closest('tr[data-id]').dataset.id]); return renderGroups(); }
       if (e.target.closest('[data-addveh]')) { const f = groupRows(k)[0]; Store.add('catalog', [{ make: '', model: '', years: '', product: f.product, compat: f.compat, qty: f.qty, notes: '' }]); return renderGroups(); } });
     el.addEventListener('change', e => { if ($('#refView').value !== 'key') return; const tr = e.target.closest('[data-g]'); if (!tr) return; const rows = groupRows(tr.dataset.g);
+      if (e.target.dataset.stock) { Stock.set(rows[0], e.target.checked).then(renderGroups); return; }
       if (e.target.classList.contains('gcb')) { rows.forEach(r => { r.checked = e.target.checked; Store.mark('catalog', r); }); updateCount(); }
     });
     el.addEventListener('focusout', e => { if ($('#refView').value !== 'key' || !e.target.isContentEditable) return; const td = e.target, v = td.innerText.replace(/\s+/g, ' ').trim();
