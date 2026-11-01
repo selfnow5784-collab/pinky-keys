@@ -58,3 +58,6 @@ input[type=search]::-webkit-search-cancel-button { display: none; } #q:focus { o
 .sheet tr.unv td { color: var(--muted); font-style: italic; }
 .sheet td.trunc::after { content: '*'; color: var(--muted); }
 nav button { font-size: .8rem; padding: .55rem .05rem; }
+.stk { white-space: nowrap; cursor: pointer; } .stk input { width: 1.4em; height: 1.4em; vertical-align: middle; } .sheet .c-name, .sheet .c-product { min-width: 16em; }
+.sheet .c-nm { min-width: 10em; }
+.sheet.inv .c-fits { min-width: 14em; }
