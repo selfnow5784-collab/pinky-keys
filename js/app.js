@@ -5,11 +5,11 @@
 (function () {
   'use strict';
   const { $ } = U;
-  const TABS = ['search', 'inventory', 'reference', 'vehicles', 'data'];
+  const TABS = ['search', 'inventory', 'reference', 'vehicles', 'data', 'review'];
   let tab = 'search';
   function show(t) {
     if (tab !== t) window.scrollTo(0, 0); tab = t; TABS.forEach(x => { $('#tab-' + x).hidden = x !== t; $('#btn-' + x).classList.toggle('active', x === t); });
-    ({ search: () => QuickSearch.run(), inventory: InventoryUI.render, reference: ReferenceUI.render, vehicles: VehiclesUI.render, data: DataUI.renderFiles })[t]();
+    ({ search: () => QuickSearch.run(), inventory: InventoryUI.render, reference: ReferenceUI.render, vehicles: VehiclesUI.render, data: DataUI.renderFiles, review: ReviewUI.render })[t]();
   }
   function applyPrefs() {
     const p = Store.prefs; document.body.classList.toggle('light', !p.dark); document.documentElement.style.fontSize = (18 * (p.textSize || 1)) + 'px';
@@ -22,8 +22,9 @@
   const rebuild = U.debounce(() => { Lookup.rebuild(Store.st); if (tab === 'search') QuickSearch.run(); }, 250);
   async function boot() {
     try { await Store.load(); } catch (e) { U.toast('Could not open storage: ' + e.message, true, 10000); }
+    try { await CatalogFile.sync(); } catch (e) { U.toast('Catalog file failed: ' + e.message, true, 8000); }
     Lookup.rebuild(Store.st); applyPrefs();
-    [QuickSearch, InventoryUI, ReferenceUI, VehiclesUI, DataUI].forEach(m => m.init());
+    [QuickSearch, InventoryUI, ReferenceUI, VehiclesUI, DataUI, ReviewUI].forEach(m => m.init());
     TABS.forEach(t => { $('#btn-' + t).onclick = () => show(t); });
     $('#saveFab').onclick = async () => { try { await Store.save(); U.toast('Saved'); } catch (e) { U.toast('Save failed: ' + e.message, true, 8000); } };
     $('#topFab').onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });

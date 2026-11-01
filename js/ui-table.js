@@ -14,7 +14,7 @@
       const rows = t.sorted(), pages = Math.max(1, Math.ceil(rows.length / o.pageSize)); if (t.page >= pages) t.page = pages - 1;
       const slice = rows.slice(t.page * o.pageSize, (t.page + 1) * o.pageSize);
       const th = o.columns.map(c => `<th data-sort="${c.key}" class="sortable${t.sortKey === c.key ? (t.dir > 0 ? ' asc' : ' desc') : ''}">${esc(c.label)}</th>`).join('');
-      const body = slice.map(r => `<tr data-id="${esc(r.id)}" class="${r.checked ? 'checked' : ''}"><td class="cb"><input type="checkbox" class="rowcb" ${r.checked ? 'checked' : ''} aria-label="select row"></td>` +
+      const body = slice.map(r => `<tr data-id="${esc(r.id)}" class="${r.checked ? 'checked' : ''} ${o.rowClass ? o.rowClass(r) : ''}"><td class="cb"><input type="checkbox" class="rowcb" ${r.checked ? 'checked' : ''} aria-label="select row"></td>` +
         o.columns.map(c => c.type === 'bool' ? `<td class="c-${c.key}"><input type="checkbox" class="boolcb" data-k="${c.key}" ${r[c.key] ? 'checked' : ''}></td>`
           : `<td class="c-${c.key}" data-k="${c.key}" ${c.edit ? 'contenteditable="true"' : ''}>${esc(c.fmt ? c.fmt(c.get ? c.get(r) : r[c.key]) : r[c.key])}</td>`).join('') + (o.rowExtra ? `<td class="x">${o.rowExtra(r)}</td>` : '') + '</tr>').join('');
       o.el.innerHTML = `<div class="pager">${pager(rows.length, pages)}</div><div class="tscroll"><table class="sheet"><thead><tr><th class="cb"><input type="checkbox" class="allcb" aria-label="select page"></th>${th}${o.rowExtra ? '<th></th>' : ''}</tr></thead><tbody>${body || `<tr><td colspan="${o.columns.length + 2}" class="empty"></td></tr>`}</tbody></table></div><div class="pager">${pager(rows.length, pages)}</div>`;

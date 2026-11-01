@@ -12,14 +12,15 @@
   let L = null;
   function rebuild(st) {
     const products = new Map();
-    st.catalog.forEach(r => { const k = D.productKey(r.product); let p = products.get(k);
-      if (!p) { p = { key: k, name: r.product, rows: [], tokens: new Set() }; products.set(k, p); D.pnTokens(r.product).forEach(t => p.tokens.add(t)); }
+    const cat0 = st.catalog.filter(r => !r.reviewOnly);
+    cat0.forEach(r => { const k = D.rowKey(r); let p = products.get(k);
+      if (!p) { p = { key: k, name: r.product, rows: [], tokens: new Set() }; products.set(k, p); } D.pnTokens([r.product, r.pn, r.fcc].join(' ')).forEach(t => p.tokens.add(t));
       p.rows.push(r); });
     const tokProducts = new Map(); products.forEach(p => p.tokens.forEach(t => { if (!tokProducts.has(t)) tokProducts.set(t, []); tokProducts.get(t).push(p); }));
     const links = new Map(); // productKey -> [Inventory items]
     st.inventory.forEach(it => { const seen = new Set(); V.linkTokens(it).forEach(t => (tokProducts.get(t) || []).forEach(p => { if (seen.has(p.key)) return; seen.add(p.key);
       if (!links.has(p.key)) links.set(p.key, []); links.get(p.key).push(it); })); });
-    const cat = S.buildIndex(st.catalog, { get: r => ({ make: r.make, model: r.model, years: r.years, text: [r.product, r.compat, r.notes].join(' ') }) });
+    const cat = S.buildIndex(cat0, { get: r => ({ make: r.make, model: r.model, years: r.years, text: [r.product, r.pn, r.item, r.fcc, r.chip, r.compat, r.notes].join(' ') }) });
     const veh = S.buildIndex(st.vehicles, { get: r => ({ make: r.make, model: r.model, years: r.years, text: [r.chip, r.strattec, r.notes].join(' ') }) });
     const invRows = [];
     st.inventory.forEach(it => { const text = [it.pn, it.name, it.links, it.notes, it.type].join(' ');
@@ -36,7 +37,7 @@
     const c = S.run(text, L.cat, L.vocab, q), h = S.run(text, L.veh, L.vocab, q), v = S.run(text, L.inv, L.vocab, q);
     // group catalog hits by product
     const byP = new Map();
-    c.hits.forEach(e => { const k = D.productKey(e.r.product); if (!byP.has(k)) byP.set(k, []); byP.get(k).push(e.r); });
+    c.hits.forEach(e => { const k = D.rowKey(e.r); if (!byP.has(k)) byP.set(k, []); byP.get(k).push(e.r); });
     let products = [...byP].map(([k, rows]) => { const p = L.products.get(k) || { name: rows[0].product, rows }; const linked = L.links.get(k) || [];
       return { key: k, name: p.name, matched: rows, all: p.rows, others: p.rows.length - rows.length, onHand: linked, onHandQty: sumQty(linked),
         verified: p.rows.every(r => r.verified), trunc: rows.some(r => S.isTruncModel(r.make, r.model)) }; });

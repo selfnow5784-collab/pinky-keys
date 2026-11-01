@@ -12,18 +12,18 @@
   'use strict';
   const { $, esc } = U;
   const QTY = { key: 'qty', label: 'Supplier qty (not stock)', edit: true, type: 'num' };
-  const COLS = [{ key: 'stock', label: 'In stock', type: 'num', get: r => onHandQty(r), fmt: q => q > 0 ? `Yes (${q})` : 'No' }, { key: 'make', label: 'Make', edit: true }, { key: 'model', label: 'Model', edit: true }, { key: 'years', label: 'Years', edit: true },
-    { key: 'product', label: 'Product', edit: true }, { key: 'compat', label: 'Vehicle compatibility', edit: true }, { key: 'notes', label: 'Notes', edit: true }];
+  const COLS = [{ key: 'stock', label: 'In stock', type: 'num', get: r => onHandQty(r), fmt: q => q > 0 ? `Yes (${q})` : 'No' }, { key: 'src', label: 'Source', edit: true }, { key: 'make', label: 'Make', edit: true }, { key: 'model', label: 'Model', edit: true }, { key: 'years', label: 'Years', edit: true },
+    { key: 'product', label: 'Product', edit: true }, { key: 'fcc', label: 'FCC ID', edit: true }, { key: 'chip', label: 'Chip', edit: true }, { key: 'freq', label: 'Frequency', edit: true }, { key: 'pn', label: 'Part #', edit: true }, { key: 'price', label: 'Price', edit: true }, { key: 'notes', label: 'Notes', edit: true }];
   // cached product key per row (recomputed only if the product name changed)
-  const pk = r => (r._pkSrc === r.product ? r._pk : (r._pkSrc = r.product, r._pk = Data.productKey(r.product)));
+  const pk = r => Data.rowKey(r);
   let table, gPage = 0, gSort = 'product', gDir = 1, sSort = null, sDir = 1; const open = new Set();
   // in stock = linked (by part # / FCC) to an Inventory item with qty > 0. The catalog's own qty never counts.
   const onHandQty = r => Lookup.L ? (Lookup.L.links.get(pk(r)) || []).reduce((a, it) => a + (+it.qty || 0), 0) : 0;
   const onHand = r => onHandQty(r) > 0;
   const showQty = () => $('#refShowQty').checked;
-  const cols = () => showQty() ? COLS.slice(0, 5).concat([QTY], COLS.slice(5)) : COLS;
+  const cols = () => showQty() ? COLS.slice(0, 6).concat([QTY], COLS.slice(6)) : COLS;
   function visibleRows() {
-    const t = $('#refFilter').value.trim(); let rows = Store.st.catalog;
+    const t = $('#refFilter').value.trim(); let rows = Store.st.catalog.filter(r => !r.reviewOnly);
     if (t && Lookup.L) { const s = new Set(Search.run(t, Lookup.L.cat, Lookup.L.vocab).hits.map(e => e.r.id)); rows = rows.filter(r => s.has(r.id)); }
     if ($('#refOnHand').checked) rows = rows.filter(onHand);
     if ($('#refChecked').checked) rows = rows.filter(r => r.checked);
@@ -53,7 +53,7 @@
   const groupRows = k => (gIndex && gIndex.get(k)) || Store.st.catalog.filter(r => pk(r) === k);
   const subRows = k => { const r = groupRows(k); return sSort ? r.slice().sort((a, b) => sDir * String(a[sSort] || '').localeCompare(String(b[sSort] || ''), undefined, { numeric: true })) : r; };
   function init() {
-    table = Table.create({ el: $('#refTable'), kind: 'catalog', columns: COLS, rows: visibleRows, pageSize: 50, onCheck: updateCount, onEdit: (r, k) => { if (k === 'qty') setTimeout(render); } });
+    table = Table.create({ el: $('#refTable'), kind: 'catalog', columns: COLS, rows: visibleRows, pageSize: 50, rowClass: r => r.review ? 'unv' : '', onCheck: updateCount, onEdit: (r, k) => { if (k === 'qty') setTimeout(render); } });
     const again = U.debounce(() => { table.page = 0; gPage = 0; render(); }, 200);
     $('#refFilter').addEventListener('input', again); ['#refOnHand', '#refChecked', '#refView', '#refShowQty'].forEach(s => $(s).addEventListener('change', () => { table.page = 0; gPage = 0; render(); }));
     $('#refAdd').onclick = () => { const r = Store.add('catalog', [{ make: '', model: '', years: '', product: 'NEW KEY – edit me', compat: '', qty: 0, notes: '', checked: true }])[0]; $('#refChecked').checked = true; $('#refView').value = 'vehicle'; render(); U.toast('New row added (shown with "only checked")'); };

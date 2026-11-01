@@ -62,6 +62,8 @@
     for (const m of t.matchAll(/[A-Z0-9]+(?:-[A-Z0-9]+)*/g)) { const c = m[0].replace(/-/g, ''); if (c.length >= 6 && /\d/.test(c) && /[A-Z]/.test(c) || /^\d{7}$/.test(c)) out.add(c); }
     return [...out];
   }
+  // one 'key' = same product name + same supplier/part #/FCC/chip/blade (so generic names like "Transponder key" don't lump together)
+  const rowKey = r => [productKey(r.product), r.src, r.pn, r.item, r.fcc, r.chip, r.blade].map(x => x || '').join('|');
   function dedupeKey(kind, r) {
     if (kind === 'inventory') return r.pn ? 'pn:' + S.compact(r.pn) : 'name:' + S.norm(r.name);
     const y = S.norm(r.years).replace(/\s/g, '');
@@ -88,6 +90,6 @@
     });
     return { kind, map, rows, bad, dupFile, dupExisting, truncated, total: parsed.data.length };
   }
-  G.Data = { KINDS, LABEL, ALIASES, detectKind, mapHeaders, analyse, clean, fixMojibake, productKey, pnTokens, dedupeKey, parseQty };
+  G.Data = { KINDS, LABEL, ALIASES, detectKind, mapHeaders, analyse, clean, fixMojibake, productKey, rowKey, pnTokens, dedupeKey, parseQty };
   if (typeof module !== 'undefined') module.exports = G.Data;
 })(typeof window !== 'undefined' ? window : globalThis);

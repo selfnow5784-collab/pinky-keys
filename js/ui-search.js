@@ -11,7 +11,7 @@
   let limitP = 25, limitV = 30, last = null; const sorts = {}, open = new Set();
   const COLS = {
     inv: [['stock', 'In stock', 'num'], ['qty', 'Qty', 'num'], ['pn', 'Part #'], ['fits', 'Fits'], ['name', 'Name']],
-    key: [['stock', 'In stock', 'num'], ['name', 'Key'], ['years', 'Years'], ['model', 'Model'], ['make', 'Make'], ['n', 'Fits', 'num']],
+    key: [['stock', 'In stock', 'num'], ['name', 'Key'], ['years', 'Years'], ['model', 'Model'], ['make', 'Make'], ['fcc', 'FCC ID'], ['chip', 'Chip'], ['n', 'Fits', 'num']],
     veh: [['make', 'Make'], ['model', 'Model'], ['years', 'Years'], ['chip', 'Chip'], ['notes', 'Notes']] };
   const yn = q => q > 0 ? `Yes (${q})` : 'No';
   const fitText = f => [f.make, f.model, f.years].filter(Boolean).join(' ');
@@ -32,10 +32,10 @@
   }
   function keyRows(products) {
     return products.slice(0, limitP).map(p => { const m = p.matched[0];
-      const v = { stock: p.onHandQty, name: p.name, make: m.make, model: m.model, years: m.years, n: p.all.length };
+      const v = { stock: p.onHandQty, name: p.name, make: m.make, model: m.model, years: m.years, fcc: m.fcc || '', chip: m.chip || '', n: p.all.length };
       const rest = open.has(p.key) ? p.matched.slice(1).concat(p.all.filter(x => !p.matched.includes(x)))
-        .map(x => `<tr class="exp"><td></td><td></td>${ed('catalog', x.id, 'years', x.years, 'c-yr')}${ed('catalog', x.id, 'model', x.model, mcls(x))}${ed('catalog', x.id, 'make', x.make)}<td></td></tr>`).join('') : '';
-      return { v, html: `<tr class="krow" data-k="${esc(p.key)}"><td class="c-stock">${yn(p.onHandQty)}</td><td class="c-name" contenteditable="true" data-ed="product|${esc(p.key)}|product">${esc(p.name)}</td>${ed('catalog', m.id, 'years', m.years, 'c-yr')}${ed('catalog', m.id, 'model', m.model, mcls(m))}${ed('catalog', m.id, 'make', m.make)}<td class="c-n" data-open>${p.all.length > 1 ? (open.has(p.key) ? '▾ ' : '▸ ') : ''}${p.all.length}</td></tr>${rest}` }; });
+        .map(x => `<tr class="exp${x.review ? ' unv' : ''}"><td></td><td></td>${ed('catalog', x.id, 'years', x.years, 'c-yr')}${ed('catalog', x.id, 'model', x.model, mcls(x))}${ed('catalog', x.id, 'make', x.make)}<td></td><td></td><td></td></tr>`).join('') : '';
+      return { v, html: `<tr class="krow${m.review ? ' unv' : ''}" data-k="${esc(p.key)}"><td class="c-stock">${yn(p.onHandQty)}</td><td class="c-name" contenteditable="true" data-ed="product|${esc(p.key)}|product">${esc(p.name)}</td>${ed('catalog', m.id, 'years', m.years, 'c-yr')}${ed('catalog', m.id, 'model', m.model, mcls(m))}${ed('catalog', m.id, 'make', m.make)}${ed('catalog', m.id, 'fcc', m.fcc)}${ed('catalog', m.id, 'chip', m.chip)}<td class="c-n" data-open>${p.all.length > 1 ? (open.has(p.key) ? '▾ ' : '▸ ') : ''}${p.all.length}</td></tr>${rest}` }; });
   }
   function vehRows(r) {
     return r.vehicles.slice(0, limitV).map(x => ({ v: x, html: `<tr>${['make', 'model', 'years', 'chip', 'notes'].map(f => ed('vehicles', x.id, f, x[f])).join('')}</tr>` }));
