@@ -15,7 +15,7 @@
       const s = f.make + '|' + f.model + '|' + f.years; if (!seen.has(s) && f.make) { seen.add(s); out.push(f); } });
     return out;
   }
-  async function set(r, on) {
+  function apply(r, on) {
     const k = ref(r), mine = byRef(k);
     if (on) {
       if (mine.length) { if (!(+mine[0].qty > 0)) Store.update('inventory', mine[0], 'qty', 1); }
@@ -25,10 +25,11 @@
       if (mine.length) Store.remove('inventory', mine.map(it => it.id));
       (Lookup.L && Lookup.L.links.get(Data.rowKey(r)) || []).forEach(it => { if (!it.ref && +it.qty > 0) Store.update('inventory', it, 'qty', 0); });
     }
-    Lookup.rebuild(Store.st);
-    try { await Store.save(); } catch (e) { U.toast('Save failed: ' + e.message, true, 8000); }
   }
+  async function flush() { Lookup.rebuild(Store.st); try { await Store.save(); } catch (e) { U.toast('Save failed: ' + e.message, true, 8000); } }
+  async function set(r, on) { apply(r, on); await flush(); }
+  async function setMany(rows, on) { rows.forEach(r => apply(r, on)); await flush(); }
   // tick box cell html; data-stock = catalog row id
   const cell = (r, q) => `<td class="c-stock"><label class="stk"><input type="checkbox" data-stock="${U.esc(r.id)}" ${q > 0 ? 'checked' : ''}> ${q > 0 ? 'Yes' + (q > 1 ? ` (${q})` : '') : 'No'}</label></td>`;
-  G.Stock = { ref, qty, set, cell, fitsFor };
+  G.Stock = { ref, qty, set, setMany, cell, fitsFor };
 })(window);

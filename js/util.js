@@ -8,7 +8,7 @@
   function toast(msg, isErr, ms) { if (!isErr) return; const t = $('#toast'); t.textContent = msg; t.className = 'show' + (isErr ? ' err' : ''); clearTimeout(tt); tt = setTimeout(() => { t.className = ''; }, ms || 3500); }
   // dialog(title, bodyHtml, [{label, value, cls}]) -> Promise(value of clicked button, or null)
   function dialog(title, body, buttons) {
-    const d = $('#dlg'); $('#dlgTitle').textContent = title; $('#dlgBody').innerHTML = body;
+    const d = $('#dlg'); const ub = $('#undoBar'); if (ub) ub.hidden = true; $('#dlgTitle').textContent = title; $('#dlgBody').innerHTML = body;
     const f = $('#dlgFoot'); f.innerHTML = '';
     return new Promise(res => {
       (buttons || [{ label: 'OK', value: true }]).forEach(b => { const btn = document.createElement('button'); btn.textContent = b.label; btn.className = b.cls || '';

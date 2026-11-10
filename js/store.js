@@ -9,7 +9,7 @@
   const KINDS = ['catalog', 'vehicles', 'inventory', 'files'];
   const st = { catalog: [], vehicles: [], inventory: [], files: [] }, byId = {}, dirty = {}, gone = {};
   KINDS.forEach(k => { byId[k] = new Map(); dirty[k] = new Set(); gone[k] = new Set(); });
-  const prefs = { autosave: false, floating: true, dark: true, textSize: 1 };
+  const prefs = { autosave: true, floating: true, dark: true, textSize: 1, theme: '', rowSize: 'compact', cols: null };
   let seq = Date.now(), listeners = [], unsaved = false, autoT;
   const newId = k => k[0] + (seq++).toString(36);
   function changed(what) { unsaved = true; listeners.forEach(f => f(what)); if (prefs.autosave) { clearTimeout(autoT); autoT = setTimeout(save, 400); } }
@@ -43,5 +43,5 @@
     await DB.setMeta('prefs', prefs); unsaved = false; listeners.forEach(f => f('saved'));
   }
   async function setPref(k, v) { prefs[k] = v; await DB.setMeta('prefs', prefs); listeners.forEach(f => f('prefs')); }
-  G.Store = { st, byId, prefs, load, add, update, mark, remove, replaceKind, save, setPref, on: f => listeners.push(f), get unsaved() { return unsaved; }, markAllDirty: () => KINDS.forEach(k => st[k].forEach(r => dirty[k].add(r.id))) };
+  G.Store = { st, byId, prefs, load, add, update, mark, remove, replaceKind, save, setPref, changed: what => listeners.forEach(f => f(what)), on: f => listeners.push(f), get unsaved() { return unsaved; }, markAllDirty: () => KINDS.forEach(k => st[k].forEach(r => dirty[k].add(r.id))) };
 })(window);

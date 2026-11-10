@@ -12,7 +12,7 @@
   let L = null;
   function rebuild(st) {
     const products = new Map();
-    const cat0 = st.catalog.filter(r => !r.reviewOnly);
+    const cat0 = st.catalog; // v3.8: review rows are in the sheet too (amber dot)
     cat0.forEach(r => { const k = D.rowKey(r); let p = products.get(k);
       if (!p) { p = { key: k, name: r.product, rows: [], tokens: new Set() }; products.set(k, p); } D.pnTokens([r.product, r.pn, r.fcc].join(' ')).forEach(t => p.tokens.add(t));
       p.rows.push(r); });
@@ -22,7 +22,8 @@
     products.forEach(p => { const k = refOf(p.rows[0]); if (!refP.has(k)) refP.set(k, []); refP.get(k).push(p); });
     st.inventory.forEach(it => { const seen = new Set(), add = p => { if (seen.has(p.key)) return; seen.add(p.key); if (!links.has(p.key)) links.set(p.key, []); links.get(p.key).push(it); };
       if (it.ref) (refP.get(it.ref) || []).forEach(add); else V.linkTokens(it).forEach(t => (tokProducts.get(t) || []).forEach(add)); });
-    const cat = S.buildIndex(cat0, { get: r => ({ make: r.make, model: r.model, years: r.years, text: [r.product, r.pn, r.item, r.fcc, r.chip, r.compat, r.notes].join(' ') }) });
+    const cx = r => G.Custom ? Custom.list().map(c => Custom.val(r.id, c.id)).join(' ') : '';
+    const cat = S.buildIndex(cat0, { get: r => ({ make: r.make, model: r.model, years: r.years, text: [r.product, r.pn, r.item, r.fcc, r.chip, r.compat, r.notes, r.src, r.supplier, cx(r)].join(' ') }) });
     const veh = S.buildIndex(st.vehicles, { get: r => ({ make: r.make, model: r.model, years: r.years, text: [r.chip, r.strattec, r.notes].join(' ') }) });
     const invRows = [];
     st.inventory.forEach(it => { const text = [it.pn, it.name, it.links, it.notes, it.type].join(' ');
