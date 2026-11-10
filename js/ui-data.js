@@ -1,7 +1,7 @@
-/* ui-data.js — Data tab: import/export the catalog CSV (main + review) and show current
-   file info. Theme, row size, My Fixes, hidden rows, custom columns, backup/restore,
-   help and erase live in the File / Edit / View / Help menus. Import never wipes
-   stock, My Fixes, user rows, hidden ids or custom columns. */
+/* ui-data.js — Settings / Data tab: catalog file cards (main + review), Import CSV,
+   Export catalog, Custom columns and Erase. Theme, row size, My Fixes, Hidden rows,
+   backup/restore and Help stay in the File / Edit / View / Help menus as in v3.9-3.
+   Import never wipes stock, My Fixes, user rows, hidden ids or custom columns. */
 (function (G) {
   'use strict';
   const { $, esc } = U;
@@ -66,25 +66,23 @@
     await Custom.replaceAll(b.customCols || [], b.customVals || {});
     if (b.prefs) Object.assign(Store.prefs, b.prefs);
     await Users.migrate();
-    await Store.save(); Lookup.rebuild(Store.st); Store.changed('prefs'); renderFiles(); renderCounts(); SheetUI.refresh(); U.toast('Backup restored');
+    await Store.save(); Lookup.rebuild(Store.st); Store.changed('prefs'); renderFiles(); renderCounts(); renderPrefs(); SheetUI.refresh(); U.toast('Backup restored');
   }
-  function renderPrefs() { renderFiles(); }
-  function renderCounts() { renderColList(); }
-  function colListBody() {
-    const list = Custom.list();
-    const items = list.length ? `<ul class="collist" id="colList">${list.map(c => `<li><b>${esc(c.label)}</b> <button type="button" data-cren="${esc(c.id)}">Rename</button> <button type="button" data-cdel="${esc(c.id)}" class="danger">Delete</button></li>`).join('')}</ul>` : '<div id="colList"></div>';
-    return items + '<div class="row addcol"><input id="ccName" autocomplete="off" aria-label="Column name"><button type="button" id="colAdd">Add</button></div>';
+  const theme = () => Store.prefs.theme || (Store.prefs.dark === false ? 'light' : 'dark');
+  function renderPrefs() {
+    const p = Store.prefs, sel = $('#pTheme');
+    if (sel) sel.value = theme();
+    document.querySelectorAll('[data-rowsize]').forEach(b => b.classList.toggle('on', b.dataset.rowsize === (p.rowSize || 'compact')));
+    renderCounts();
+  }
+  function renderCounts() {
+    const fc = $('#fixCount'); if (fc) { const n = Fixes.count(); fc.textContent = n ? '(' + n.toLocaleString() + ')' : ''; }
+    const hc = $('#hidCount'); if (hc) { const h = Hidden.count(); hc.textContent = h ? '(' + h.toLocaleString() + ')' : ''; }
+    renderColList();
   }
   function renderColList() {
-    const el = $('#colList'); if (!el || !$('#dlg') || !$('#dlg').open) return;
-    if (!$('#colAdd')) return;
-    const wrap = el.closest ? el : null;
-    const b = $('#dlgBody'); if (!b || !b.contains(el)) return;
-    const keep = ($('#ccName') || {}).value;
-    const focused = document.activeElement === $('#ccName');
-    b.innerHTML = colListBody();
-    if (keep && $('#ccName')) $('#ccName').value = keep;
-    if (focused && $('#ccName')) $('#ccName').focus();
+    const list = Custom.list(), el = $('#colList'); if (!el) return;
+    el.innerHTML = list.length ? `<ul class="collist">${list.map(c => `<li><b>${esc(c.label)}</b> <button type="button" data-cren="${esc(c.id)}">Rename</button> <button type="button" data-cdel="${esc(c.id)}" class="danger">Delete</button></li>`).join('')}</ul>` : '<p class="note">None yet.</p>';
   }
   function hiddenBody() {
     const list = Hidden.list();
@@ -103,7 +101,7 @@
     if (v === 'all') { await Hidden.restore(); renderCounts(); SheetUI.refresh(); }
   }
   async function addColumn() {
-    const v = await U.dialog('Add column', '<label class="ed">Name<input id="ccName" autocomplete="off"></label>', [{ label: 'Cancel', value: null }, { label: 'Add', cls: 'primary', value: () => ($('#ccName') || {}).value }]);
+    const v = await U.dialog('Add column', '<label class="ed">Name<input id="ccName" placeholder="e.g. Bin location, Cost" autocomplete="off"></label>', [{ label: 'Cancel', value: null }, { label: 'Add', cls: 'primary', value: () => ($('#ccName') || {}).value }]);
     if (v == null) return;
     const c = await Custom.add(v); if (!c) return U.toast('Give the column a name that is not already used', true);
     renderColList(); SheetUI.render();
@@ -120,32 +118,6 @@
     if (!await U.confirmBox('Delete column?', `Delete "${cur.label}" and its values on every row?`, 'Delete')) return;
     await Custom.remove(id); renderColList(); SheetUI.render();
   }
-  async function openCustom() {
-    let next = 'list';
-    while (next && next !== 'close') {
-      if (next === 'list') {
-        let action = null;
-        const p = U.dialog('Custom columns', colListBody(), [{ label: 'Close', value: 'close' }]);
-        const b = $('#dlgBody');
-        b.onclick = e => {
-          if (e.target.id === 'colAdd') {
-            const name = ($('#ccName') || {}).value;
-            Custom.add(name).then(c => { if (!c) return U.toast('Give the column a name that is not already used', true); b.innerHTML = colListBody(); SheetUI.render(); });
-            return;
-          }
-          const ren = e.target.dataset && e.target.dataset.cren, del = e.target.dataset && e.target.dataset.cdel;
-          if (ren) action = { op: 'ren', id: ren };
-          else if (del) action = { op: 'del', id: del };
-          else return;
-          const closeBtn = $('#dlgFoot button'); if (closeBtn) closeBtn.click();
-        };
-        const v = await p; b.onclick = null; next = action || v; continue;
-      }
-      if (next.op === 'ren') { await renameColumn(next.id); next = 'list'; continue; }
-      if (next.op === 'del') { await deleteColumn(next.id); next = 'list'; continue; }
-      next = 'close';
-    }
-  }
   async function exportCatalog() {
     const kinds = ['main', 'review'].filter(k => Store.st.catalog.some(r => r.fromCsv === k) || fileOf(k));
     if (!kinds.length) return U.toast('No catalog to export', true);
@@ -161,20 +133,25 @@
     else if (v) CatalogFile.exportClean(v);
   }
   function openHelp() {
-    const html = $('#helpText') ? $('#helpText').innerHTML : '';
+    const html = $('#helpText') ? $('#helpText').innerHTML : (document.querySelector('.help') ? document.querySelector('.help').innerHTML : '');
     return U.dialog('How to use', html, [{ label: 'Close', value: true }]);
-  }
-  async function eraseAll() {
-    if (!await U.confirmBox('Erase everything?', 'Delete ALL data on this phone, including stock, My Fixes, your items, hidden rows and custom columns? Download a backup first.', 'Erase')) return;
-    ['catalog', 'vehicles', 'inventory', 'files'].forEach(k => Store.replaceKind(k));
-    await Fixes.replaceAll({}); await Hidden.replaceAll({}); await Custom.replaceAll([], {});
-    await Store.save(); Lookup.rebuild(Store.st); renderFiles(); renderCounts(); SheetUI.refresh();
   }
   function init() {
     $('#impFile').addEventListener('change', async e => { const kindEl = $('#impKind'); for (const f of e.target.files) { try { await importFile(f, kindEl ? kindEl.value : 'auto'); } catch (err) { U.toast('Import failed: ' + err.message, true, 8000); } } e.target.value = ''; });
     const exp = $('#expCat'); if (exp) exp.onclick = () => exportCatalog();
+    if ($('#bkDown')) $('#bkDown').onclick = backup;
     $('#bkFile').addEventListener('change', e => { if (e.target.files[0]) restore(e.target.files[0]); e.target.value = ''; });
-    renderFiles();
+    if ($('#pTheme')) $('#pTheme').onchange = e => { Store.setPref('theme', e.target.value); };
+    document.querySelectorAll('[data-rowsize]').forEach(b => { b.onclick = () => { Store.setPref('rowSize', b.dataset.rowsize); renderPrefs(); }; });
+    if ($('#fixBtn')) $('#fixBtn').onclick = () => FixesUI.open();
+    if ($('#hidBtn')) $('#hidBtn').onclick = () => openHidden();
+    if ($('#colAdd')) $('#colAdd').onclick = () => addColumn();
+    if ($('#colList')) $('#colList').addEventListener('click', e => {
+      const ren = e.target.dataset.cren, del = e.target.dataset.cdel;
+      if (ren) renameColumn(ren); else if (del) deleteColumn(del);
+    });
+    if ($('#resetAll')) $('#resetAll').onclick = async () => { if (!await U.confirmBox('Erase everything?', 'Delete ALL data on this phone, including stock, My Fixes, your items, hidden rows and custom columns? Download a backup first.', 'Erase')) return; ['catalog', 'vehicles', 'inventory', 'files'].forEach(k => Store.replaceKind(k)); await Fixes.replaceAll({}); await Hidden.replaceAll({}); await Custom.replaceAll([], {}); await Store.save(); Lookup.rebuild(Store.st); renderFiles(); renderCounts(); SheetUI.refresh(); };
+    renderFiles(); renderPrefs();
   }
-  G.DataUI = { init, renderFiles, renderPrefs, renderFixCount: renderCounts, renderCounts, importFile, commit, backup, restore, openHidden, openHelp, openCustom, addColumn, exportCatalog, eraseAll };
+  G.DataUI = { init, renderFiles, renderPrefs, renderFixCount: renderCounts, renderCounts, importFile, commit, backup, restore, openHidden, openHelp, addColumn, exportCatalog };
 })(window);

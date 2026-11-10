@@ -1,6 +1,6 @@
 /* app.js (v3.9) — starts the app: loads data (including My Fixes, hidden rows, custom columns,
    and a one-time migrate of old hand-added Inventory items), two tabs (Reference sheet +
-   Data), the classic / ☰ menu, theme and row size, search index, autosave, and
+   Settings / Data), the classic / ☰ menu, theme and row size, search index, autosave, and
    the service worker (works offline). */
 (function () {
   'use strict';

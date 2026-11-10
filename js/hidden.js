@@ -1,6 +1,6 @@
 /* hidden.js — soft-hide for catalog rows, stored in IndexedDB meta ('hidden') by row id
    so a CSV re-import cannot un-hide them. Undo of the last hide appears on the undo bar;
-   View → Hidden rows can restore any. Supplier rows are only hidden;
+   View → Hidden rows (and Settings / Data) can restore any. Supplier rows are only hidden;
    user rows may also be truly deleted (Users.remove). */
 (function (G) {
   'use strict';
