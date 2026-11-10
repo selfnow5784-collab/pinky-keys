@@ -5,7 +5,7 @@
 <body class="compact">
 <header><div class="brand"><img src="icon.svg" alt="" width="28" height="28"><h1>Pinky's Auto Reference and Inventory</h1></div>
 <button id="mBtn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menuRoot">☰</button>
-<nav><button id="btn-reference" class="active">Reference</button><button id="btn-data">Settings / Data</button></nav>
+<nav><button id="btn-reference" class="active">Reference</button><button id="btn-data">Data</button></nav>
 <div id="menuRoot"></div></header>
 <main>
 <section id="tab-reference">
@@ -16,35 +16,10 @@
   <div id="sheet"></div>
 </section>
 <section id="tab-data" hidden>
-  <h3>Settings</h3>
-  <label class="big setrow">Theme <select id="pTheme"><option value="dark">Dark mode</option><option value="light">Light mode</option><option value="alt">Alternating gray</option></select></label>
-  <div class="setrow big">Row size <span class="seg"><button data-rowsize="compact">Compact</button><button data-rowsize="big">Big</button></span></div>
-  <h3>My Fixes</h3>
-  <p class="note">Your edits and Confirmed ✓ marks. They stay when you import a new CSV.</p>
-  <div class="row"><button id="fixBtn" class="primary">My Fixes <span id="fixCount"></span></button></div>
-  <h3>Hidden rows</h3>
-  <p class="note">Rows you hid from the sheet. Restore puts them back. They stay hidden when you import a new CSV.</p>
-  <div class="row"><button id="hidBtn">Hidden rows <span id="hidCount"></span></button></div>
-  <h3>Custom columns</h3>
-  <p class="note">Your own columns (Bin location, Cost, …). Values stay when you import a new CSV.</p>
-  <div id="colList"></div>
-  <div class="row"><button id="colAdd">+ Add column</button></div>
-  <h3>Import a CSV</h3>
-  <p class="note">Importing the catalog keeps your stock ticks, My Fixes, your items, hidden rows and custom columns. Download a backup first.</p>
-  <div class="row" hidden><select id="impKind"><option value="auto">Auto-detect</option><option value="inventory">Inventory (in stock)</option><option value="catalog">Reference keys</option><option value="vehicles">Chips</option></select></div>
-  <div class="row"><label class="filebtn primary" for="impFile">Import CSV</label></div>
-  <h3>Imported files</h3><div id="fileList"></div><button id="fileDel" class="danger">Delete ticked files</button>
-  <h3>Backup</h3><div class="row"><button id="bkDown">Download backup (.json)</button><label class="filebtn" for="bkFile">Restore backup</label></div>
-  <p class="note">Restore replaces everything on this phone with the backup.</p>
-  <h3>Help</h3><div class="help" id="helpText">
-  <p><b>Pinky's Auto Reference and Inventory</b> (v3.9). Offline key reference and in-stock lookup for Pinky's Locksmithing.</p>
-  <p>Type year, make or model in the search box (a year finds ranges like 2014-2018). <b>Filters</b> opens chips; tap Done to close.</p>
-  <p>On a computer, <b>File / Edit / View / Help</b> is at the top. On a phone, <b>☰</b> opens the same menu. The Reference screen stays search, Filters and the sheet.</p>
-  <p>Tick rows to Print, mark in stock, Hide or Export just those. <b>Edit → + Add item</b> adds your own row (Source: My item). Hide is reversible from <b>View → Hidden rows</b> (or Undo). Supplier rows are only hidden, never deleted; your items can be deleted from the card.</p>
-  <p>⚙ at the end of the header picks columns, including ones you add (Bin location, Cost, …). Print and Export use what is on screen (or the selection).</p>
-  <p>Tap a row for the details card. <b>Amber dot</b> = needs review; the card says why. Edit or Confirmed ✓ saves into My Fixes. Export My Fixes and send the file so it can be combined into the next CSV update.</p>
-  <p>Data stays on this phone and works offline. Blank = the supplier did not show it.</p></div>
-  <h3>Danger</h3><button id="resetAll" class="danger">Erase all data on this phone</button>
+  <h3>Catalog</h3>
+  <div id="fileInfo"></div>
+  <div class="row csvact"><label class="filebtn primary" for="impFile">Import CSV</label><button type="button" id="expCat" hidden>Export catalog</button></div>
+  <div hidden><select id="impKind"><option value="auto">Auto-detect</option><option value="inventory">Inventory (in stock)</option><option value="catalog">Reference keys</option><option value="vehicles">Chips</option></select></div>
 </section>
 </main>
 <button id="topFab" aria-label="Back to top" hidden>▲</button>
@@ -53,6 +28,14 @@
 <div id="toast" role="status"></div>
 <div id="undoBar" hidden><span id="undoMsg"></span><button id="undoBtn" type="button">Undo</button></div>
 <dialog id="dlg"><h3 id="dlgTitle"></h3><div id="dlgBody"></div><div id="dlgFoot"></div></dialog>
+<div class="help" id="helpText" hidden>
+  <p><b>Pinky's Auto Reference and Inventory</b> (v3.9). Offline key reference and in-stock lookup for Pinky's Locksmithing.</p>
+  <p>Type year, make or model in the search box (a year finds ranges like 2014-2018). <b>Filters</b> opens chips; tap Done to close.</p>
+  <p>On a computer, <b>File / Edit / View / Help</b> is at the top. On a phone, <b>☰</b> opens the same menu. The Reference screen stays search, Filters and the sheet.</p>
+  <p>Tick rows to Print, mark in stock, Hide or Export just those. <b>Edit → + Add item</b> adds your own row (Source: My item). Hide is reversible from <b>View → Hidden rows</b> (or Undo). Supplier rows are only hidden, never deleted; your items can be deleted from the card.</p>
+  <p>⚙ at the end of the header picks columns, including ones you add (Bin location, Cost, …). Print and Export use what is on screen (or the selection).</p>
+  <p>Tap a row for the details card. <b>Amber dot</b> = needs review; the card says why. Edit or Confirmed ✓ saves into My Fixes. Export My Fixes and send the file so it can be combined into the next CSV update.</p>
+  <p>Data stays on this phone and works offline. Blank = the supplier did not show it.</p></div>
 <input type="file" id="impFile" accept=".csv,text/csv" multiple class="offscreen" aria-label="Import CSV">
 <input type="file" id="bkFile" accept=".json,application/json" class="offscreen" aria-label="Restore backup">
 <script src="js/util.js"></script><script src="js/csv.js"></script><script src="js/search.js"></script><script src="js/data.js"></script><script src="js/onhand.js"></script>

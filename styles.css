@@ -142,3 +142,19 @@ dialog[open] { display: flex; flex-direction: column; overflow: hidden; } #dlgBo
 .hidlist li { display: flex; gap: .5rem; align-items: center; justify-content: space-between; padding: .45rem 0; border-bottom: 1px solid var(--line); }
 .hidlist li div { min-width: 0; } .hidlist li b { display: block; } .hidlist li span { display: block; font-size: .85rem; color: var(--muted); }
 .hidlist button { flex: 0 0 auto; min-height: 2rem; }
+
+/* Data tab: catalog file info */
+.catinfo { display: flex; flex-direction: column; gap: .5rem; margin: .25rem 0 .7rem; }
+.catcard { background: var(--card); border: 1px solid var(--line); border-radius: .5rem; padding: .65rem .75rem; }
+.catcard .k { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.catcard .fn { font-weight: 700; margin: .15rem 0 .1rem; overflow-wrap: anywhere; }
+.catcard .meta { color: var(--muted); font-size: .9rem; }
+.catcard.empty .fn { color: var(--muted); font-weight: 600; }
+#tab-data h3 { margin: .35rem 0 .45rem; }
+#tab-data .csvact { margin: .2rem 0; }
+#expCat[hidden] { display: none; }
+#helpText[hidden] { display: none; }
+@media (min-width: 700px) {
+  .catinfo { flex-direction: row; }
+  .catcard { flex: 1; min-width: 0; }
+}
