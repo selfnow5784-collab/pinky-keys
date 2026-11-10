@@ -1,6 +1,6 @@
 /* sw.js — service worker: caches every app file so it opens with no internet.
    Bump VERSION whenever any file changes so phones pick up the new files. */
-const VERSION = 'v3.9-4', CACHE = 'pinky-keys-' + VERSION;
+const VERSION = 'v3.9-5', CACHE = 'pinky-keys-' + VERSION;
 const FILES = ['./', './index.html', './styles.css', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './favicon.ico', './apple-touch-icon.png',
   './js/util.js', './js/csv.js', './js/search.js', './js/data.js', './js/onhand.js', './js/lookup.js', './js/stock.js', './js/db.js', './js/store.js',
   './js/reasons.js', './js/fixes.js', './js/users.js', './js/hidden.js', './js/custom.js', './js/catalog-file.js', './js/ui-sheet.js', './js/ui-card.js', './js/ui-fixes.js', './js/ui-data.js', './js/ui-menu.js', './js/app.js'];

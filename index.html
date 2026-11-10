@@ -5,7 +5,7 @@
 <body class="compact">
 <header><div class="brand"><img src="icon.svg" alt="" width="28" height="28"><h1>Pinky's Auto Reference and Inventory</h1></div>
 <button id="mBtn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menuRoot">☰</button>
-<nav><button id="btn-reference" class="active">Reference</button><button id="btn-data">Data</button></nav>
+<nav><button id="btn-reference" class="active">Reference</button><button id="btn-data">Settings / Data</button></nav>
 <div id="menuRoot"></div></header>
 <main>
 <section id="tab-reference">
@@ -20,6 +20,10 @@
   <div id="fileInfo"></div>
   <div class="row csvact"><label class="filebtn primary" for="impFile">Import CSV</label><button type="button" id="expCat" hidden>Export catalog</button></div>
   <div hidden><select id="impKind"><option value="auto">Auto-detect</option><option value="inventory">Inventory (in stock)</option><option value="catalog">Reference keys</option><option value="vehicles">Chips</option></select></div>
+  <h3>Custom columns</h3>
+  <div id="colList"></div>
+  <div class="row"><button id="colAdd">+ Add column</button></div>
+  <h3>Danger</h3><button id="resetAll" class="danger">Erase all data on this phone</button>
 </section>
 </main>
 <button id="topFab" aria-label="Back to top" hidden>▲</button>
