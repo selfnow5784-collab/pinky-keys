@@ -31,7 +31,7 @@
     const mine = Users.isMine(r);
     const fields = mine ? Users.fields : Fixes.EDITABLE;
     const lab = k => (Users.LABELS && Users.LABELS[k]) || (Fixes.LABELS && Fixes.LABELS[k]) || k;
-    $('#cardBody').innerHTML = `<h2>Edit</h2><p class="note">${mine ? 'This is your item. It stays when you import a new CSV.' : "Your changes go to My Fixes (Settings / Data). The supplier's value is kept too."}</p>` +
+    $('#cardBody').innerHTML = `<h2>Edit</h2><p class="note">${mine ? 'This is your item. It stays when you import a new CSV.' : "Your changes go to My Fixes (Edit → My Fixes). The supplier's value is kept too."}</p>` +
       fields.map(k => `<label class="ed">${esc(lab(k))}<input data-ek="${k}" value="${esc(r[k] || '')}"></label>`).join('') + customEdit(r);
     $('#cardFoot').innerHTML = `<button id="cCancel">Cancel</button><button id="cSave" class="primary">Save</button>`;
   }

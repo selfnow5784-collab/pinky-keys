@@ -70,7 +70,7 @@
         '<td class="gear"></td></tr>';
     }).join('');
     $('#count').textContent = n.toLocaleString() + (n === 1 ? ' row' : ' rows');
-    $('#sheet').innerHTML = `<div class="tscroll"><table class="sheet main"><thead><tr>${th}</tr></thead><tbody>${body || `<tr><td colspan="${cols.length + 2}" class="empty">${Store.st.catalog.length ? 'No matches' : 'Import your catalog in Settings / Data.'}</td></tr>`}</tbody></table></div>` +
+    $('#sheet').innerHTML = `<div class="tscroll"><table class="sheet main"><thead><tr>${th}</tr></thead><tbody>${body || `<tr><td colspan="${cols.length + 2}" class="empty">${Store.st.catalog.length ? 'No matches' : 'Import your catalog in Data.'}</td></tr>`}</tbody></table></div>` +
       (n > st.shown ? `<button id="more" class="showmore">Show more (${(n - st.shown).toLocaleString()} more)</button>` : '');
     $('#qClear').hidden = !$('#q').value;
     const sa = $('#selAll'); if (sa) sa.indeterminate = some && !allOn;
@@ -122,7 +122,7 @@
   function clearSel() { st.sel.clear(); render(); }
   async function hideSelected() {
     const ids = [...st.sel]; if (!ids.length) return U.toast('Select a row first', true);
-    if (ids.length > 20 && !await U.confirmBox('Hide ' + ids.length.toLocaleString() + ' rows?', 'You can restore them from Settings / Data → Hidden rows, or tap Undo.', 'Hide')) return;
+    if (ids.length > 20 && !await U.confirmBox('Hide ' + ids.length.toLocaleString() + ' rows?', 'You can restore them from View → Hidden rows, or tap Undo.', 'Hide')) return;
     await Hidden.hide(ids); st.sel.clear(); refresh();
   }
   async function markStock(on) {

@@ -47,5 +47,24 @@
     Lookup.rebuild(Store.st);
     await Store.save(); return rows.length;
   }
-  G.CatalogFile = { isClean, importClean, toRow, buttons };
+  const HEAD_MAIN = ['Year(s)', 'Make', 'Model', 'Product_Name', 'Type', 'Qty', 'Notes', 'id', 'FCC_ID', 'Chip', 'Blade', 'OEM_PN', 'Supplier_Part_Number', 'Supplier', 'Source_URL', 'Source_File', 'Original_Supplier_Years', 'Original_Notes', 'Compatibility_FCC_ID', 'Research_Sources'];
+  const HEAD_REV = HEAD_MAIN.concat(['Reason']);
+  function toCsvRow(r) {
+    return { 'Year(s)': r.years || '', Make: r.make || '', Model: r.model || '', Product_Name: r.product || '', Type: r.type || '',
+      Qty: r.csvQty != null && r.csvQty !== '' ? r.csvQty : '', Notes: r.notes || '', id: r.cid || '', FCC_ID: r.fcc || '', Chip: r.chip || '',
+      Blade: r.blade || '', OEM_PN: r.oem || '', Supplier_Part_Number: r.spn || '', Supplier: r.supplier || '', Source_URL: r.url || '',
+      Source_File: r.srcFile || '', Original_Supplier_Years: r.origYears || '', Original_Notes: r.origNotes || '', Compatibility_FCC_ID: r.compatFcc || '',
+      Research_Sources: r.research || '', Reason: r.review || '' };
+  }
+  function exportClean(kind) {
+    const rows = Store.st.catalog.filter(r => r.fromCsv === kind && !(G.Users && Users.isMine(r)));
+    const headers = kind === 'review' ? HEAD_REV : HEAD_MAIN;
+    const file = Store.st.files.find(f => f.csv === kind);
+    const fallback = (kind === 'review' ? 'pinky-catalog-review-' : 'pinky-catalog-') + U.stamp() + '.csv';
+    const name = (file && file.name) || fallback;
+    U.download(CSV.unparse(rows.map(toCsvRow), headers), name);
+    document.body.dataset.exportedCatalog = kind + ':' + rows.length;
+    return rows.length;
+  }
+  G.CatalogFile = { isClean, importClean, toRow, buttons, exportClean, toCsvRow, HEAD_MAIN, HEAD_REV };
 })(window);
