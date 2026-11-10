@@ -1,7 +1,7 @@
 {
-  "name": "Pinky's Key Lookup",
-  "short_name": "Pinky Keys",
-  "description": "Offline key lookup and in-stock inventory for Pinky's Locksmithing",
+  "name": "Pinky's Auto Reference and Inventory",
+  "short_name": "Pinky's Ref",
+  "description": "Offline key reference and in-stock lookup for Pinky's Locksmithing",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -22,10 +22,16 @@
       "purpose": "any"
     },
     {
-      "src": "icon-512.png",
+      "src": "icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "categories": [

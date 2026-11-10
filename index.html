@@ -1,62 +1,62 @@
 <!doctype html>
-<!-- index.html — page layout only (tabs + empty containers). Logic lives in js/, look in styles.css. See README.md. -->
+<!-- index.html (v3.9) — page layout only. Logic in js/, look in styles.css. See README.md. -->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pinky's Key Lookup</title><meta name="theme-color" content="#000000"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><link rel="stylesheet" href="styles.css"></head>
-<body>
-<header><h1>Pinky's <span>Keys</span></h1>
-<nav><button id="btn-search" class="active">Search</button><button id="btn-inventory">Inventory</button><button id="btn-reference">Reference</button><button id="btn-vehicles">Vehicles</button><button id="btn-data">Data</button><button id="btn-review">Review</button></nav></header>
+<title>Pinky's Auto Reference and Inventory</title><meta name="theme-color" content="#000000"><link rel="manifest" href="manifest.json"><link rel="icon" href="favicon.ico"><link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="stylesheet" href="styles.css"></head>
+<body class="compact">
+<header><div class="brand"><img src="icon.svg" alt="" width="28" height="28"><h1>Pinky's Auto Reference and Inventory</h1></div>
+<button id="mBtn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menuRoot">☰</button>
+<nav><button id="btn-reference" class="active">Reference</button><button id="btn-data">Settings / Data</button></nav>
+<div id="menuRoot"></div></header>
 <main>
-<p id="emptyHint" class="help" hidden>Import your catalog in Data.</p>
-<section id="tab-search">
-  <div class="searchbar"><input id="q" type="search" placeholder="2014 camaro" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search"><button id="qClear" aria-label="clear">✕</button></div>
-  <div class="row"><label class="inline big"><input type="checkbox" id="onHandOnly"> In stock only</label></div>
-  <div id="results"></div>
-</section>
-<section id="tab-inventory" hidden>
-    <div class="row"><input id="invFilter" type="search" placeholder="Filter"><button id="invAdd" class="primary">+ Add item</button></div>
-  <div class="row"><label class="inline"><input type="checkbox" id="invInOnly"> In stock only</label><button id="invExport">Export CSV</button></div>
-  <div id="invList"></div>
-</section>
-<section id="tab-reference" hidden>
-    <div class="row"><input id="refFilter" type="search" placeholder="Filter"></div>
-  <div class="row"><label>View <select id="refView"><option value="vehicle">By vehicle</option><option value="key">By key</option></select></label>
-    <label class="inline"><input type="checkbox" id="refOnHand"> In stock only</label><label class="inline"><input type="checkbox" id="refChecked"> Only checked</label><label class="inline"><input type="checkbox" id="refShowQty"> Supplier qty</label></div>
-  <div class="row"><button id="refAdd">+ Row</button><button id="refDel" class="danger">Delete checked</button><button id="refUncheck">Uncheck all</button><button id="refExport">Export visible</button></div>
-  <div id="refTable"></div>
-</section>
-<section id="tab-vehicles" hidden>
-    <div class="row"><input id="vehFilter" type="search" placeholder="Filter"></div>
-  <div class="row"><label class="inline"><input type="checkbox" id="vehChecked"> Only checked</label><button id="vehAdd">+ Row</button><button id="vehDel" class="danger">Delete checked</button><button id="vehExport">Export visible</button></div>
-  <div id="vehTable"></div>
+<section id="tab-reference">
+  <div class="searchbar"><input id="q" type="search" placeholder="Search: 2016 jeep compass" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search"><button id="qClear" aria-label="Clear search" hidden>✕</button></div>
+  <div class="toolbar"><button id="fBtn" aria-label="Filters">Filters</button><span id="fSummary" hidden></span><span class="grow"></span><span id="count" class="note"></span></div>
+  <div id="fPanel" hidden></div>
+  <div id="selBar" hidden></div>
+  <div id="sheet"></div>
 </section>
 <section id="tab-data" hidden>
-  <h3>Import a CSV</h3>
-  <div class="row"><label>Import as <select id="impKind"><option value="auto">Auto-detect</option><option value="inventory">Inventory (in stock)</option><option value="catalog">Reference keys</option><option value="vehicles">Chips</option></select></label></div>
-  <div class="row"><label class="filebtn primary">Import CSV<input type="file" id="impFile" accept=".csv,text/csv" multiple></label></div>
-  <h3>Imported files</h3><div id="fileList"></div><button id="fileDel" class="danger">Delete ticked files</button>
-  <h3>Backup</h3><div class="row"><button id="bkDown">Download backup (.json)</button><label class="filebtn">Restore backup<input type="file" id="bkFile" accept=".json,application/json"></label></div>
   <h3>Settings</h3>
-  <label class="inline big"><input type="checkbox" id="pAutosave"> Autosave</label>
-  <label class="inline big"><input type="checkbox" id="pFloating"> Floating Save / Top buttons</label>
-  <label class="inline big"><input type="checkbox" id="pDark"> Dark mode</label>
-  <label class="big">Text size <select id="pText"><option value="0.9">Smaller</option><option value="1">Normal</option><option value="1.2">Large</option><option value="1.4">Extra large</option></select></label>
-  <button id="resetAll" class="danger">Erase all data on this phone</button>
-  <h3>Help</h3><div class="help">
-  <p><b>Search</b>: tables only (no answer line): Inventory, Reference keys, Chips; the In stock column says Yes (n) / No. Tap a header to sort (again = reverse). Tap a cell to edit it (edits the real record; Save keeps it). Tap the Fits number of a key to list every vehicle it fits.</p>
-  <p><b>Review</b> = supplier rows flagged as unverified (grey in Reference and Search). The Review column says why. Clear it once you have checked the row. Blank cells = the supplier page did not show it.</p>
-  <p><b>Inventory</b> = what is in the van (in stock); the only source of stock qty. <b>Reference</b> = supplier catalog, not stock. <b>In stock</b> column: "Yes (n)" = an Inventory item with qty n links to that key by part #/FCC; "No" = not in stock. <b>Vehicles</b> = chip per vehicle.</p>
-  <p>* after a number = model name cut off in the source file. Supplier qty is the supplier's number, not yours.</p>
-  <p>Save button: red = unsaved, green = saved. Data stays on this phone; works offline.</p></div>
-</section>
-<section id="tab-review" hidden>
-  <div class="row"><input id="revFilter" type="search" placeholder="Filter"></div>
-  <div id="revTable"></div>
+  <label class="big setrow">Theme <select id="pTheme"><option value="dark">Dark mode</option><option value="light">Light mode</option><option value="alt">Alternating gray</option></select></label>
+  <div class="setrow big">Row size <span class="seg"><button data-rowsize="compact">Compact</button><button data-rowsize="big">Big</button></span></div>
+  <h3>My Fixes</h3>
+  <p class="note">Your edits and Confirmed ✓ marks. They stay when you import a new CSV.</p>
+  <div class="row"><button id="fixBtn" class="primary">My Fixes <span id="fixCount"></span></button></div>
+  <h3>Hidden rows</h3>
+  <p class="note">Rows you hid from the sheet. Restore puts them back. They stay hidden when you import a new CSV.</p>
+  <div class="row"><button id="hidBtn">Hidden rows <span id="hidCount"></span></button></div>
+  <h3>Custom columns</h3>
+  <p class="note">Your own columns (Bin location, Cost, …). Values stay when you import a new CSV.</p>
+  <div id="colList"></div>
+  <div class="row"><button id="colAdd">+ Add column</button></div>
+  <h3>Import a CSV</h3>
+  <p class="note">Importing the catalog keeps your stock ticks, My Fixes, your items, hidden rows and custom columns. Download a backup first.</p>
+  <div class="row" hidden><select id="impKind"><option value="auto">Auto-detect</option><option value="inventory">Inventory (in stock)</option><option value="catalog">Reference keys</option><option value="vehicles">Chips</option></select></div>
+  <div class="row"><label class="filebtn primary" for="impFile">Import CSV</label></div>
+  <h3>Imported files</h3><div id="fileList"></div><button id="fileDel" class="danger">Delete ticked files</button>
+  <h3>Backup</h3><div class="row"><button id="bkDown">Download backup (.json)</button><label class="filebtn" for="bkFile">Restore backup</label></div>
+  <p class="note">Restore replaces everything on this phone with the backup.</p>
+  <h3>Help</h3><div class="help" id="helpText">
+  <p><b>Pinky's Auto Reference and Inventory</b> (v3.9). Offline key reference and in-stock lookup for Pinky's Locksmithing.</p>
+  <p>Type year, make or model in the search box (a year finds ranges like 2014-2018). <b>Filters</b> opens chips; tap Done to close.</p>
+  <p>On a computer, <b>File / Edit / View / Help</b> is at the top. On a phone, <b>☰</b> opens the same menu. The Reference screen stays search, Filters and the sheet.</p>
+  <p>Tick rows to Print, mark in stock, Hide or Export just those. <b>Edit → + Add item</b> adds your own row (Source: My item). Hide is reversible from <b>View → Hidden rows</b> (or Undo). Supplier rows are only hidden, never deleted; your items can be deleted from the card.</p>
+  <p>⚙ at the end of the header picks columns, including ones you add (Bin location, Cost, …). Print and Export use what is on screen (or the selection).</p>
+  <p>Tap a row for the details card. <b>Amber dot</b> = needs review; the card says why. Edit or Confirmed ✓ saves into My Fixes. Export My Fixes and send the file so it can be combined into the next CSV update.</p>
+  <p>Data stays on this phone and works offline. Blank = the supplier did not show it.</p></div>
+  <h3>Danger</h3><button id="resetAll" class="danger">Erase all data on this phone</button>
 </section>
 </main>
-<div id="floats"><button id="topFab" aria-label="Back to top">▲</button><button id="saveFab" class="saved">Saved</button></div>
+<button id="topFab" aria-label="Back to top" hidden>▲</button>
+<div id="cardWrap" hidden><div id="cardBack"></div><div id="card" role="dialog" aria-label="Details"><div class="grab"></div><button id="cX" aria-label="Close">✕ Close</button><div id="cardBody"></div><div id="cardFoot"></div></div></div>
+<div id="printArea"></div>
 <div id="toast" role="status"></div>
+<div id="undoBar" hidden><span id="undoMsg"></span><button id="undoBtn" type="button">Undo</button></div>
 <dialog id="dlg"><h3 id="dlgTitle"></h3><div id="dlgBody"></div><div id="dlgFoot"></div></dialog>
+<input type="file" id="impFile" accept=".csv,text/csv" multiple class="offscreen" aria-label="Import CSV">
+<input type="file" id="bkFile" accept=".json,application/json" class="offscreen" aria-label="Restore backup">
 <script src="js/util.js"></script><script src="js/csv.js"></script><script src="js/search.js"></script><script src="js/data.js"></script><script src="js/onhand.js"></script>
-<script src="js/lookup.js"></script><script src="js/stock.js"></script><script src="js/db.js"></script><script src="js/store.js"></script><script src="js/ui-table.js"></script><script src="js/ui-search.js"></script>
-<script src="js/ui-inventory.js"></script><script src="js/ui-reference.js"></script><script src="js/ui-vehicles.js"></script><script src="js/ui-data.js"></script><script src="js/catalog-file.js"></script><script src="js/ui-review.js"></script><script src="js/app.js"></script>
+<script src="js/lookup.js"></script><script src="js/stock.js"></script><script src="js/db.js"></script><script src="js/store.js"></script><script src="js/reasons.js"></script><script src="js/fixes.js"></script>
+<script src="js/users.js"></script><script src="js/hidden.js"></script><script src="js/custom.js"></script>
+<script src="js/catalog-file.js"></script><script src="js/ui-sheet.js"></script><script src="js/ui-card.js"></script><script src="js/ui-fixes.js"></script><script src="js/ui-data.js"></script><script src="js/ui-menu.js"></script><script src="js/app.js"></script>
 </body></html>
