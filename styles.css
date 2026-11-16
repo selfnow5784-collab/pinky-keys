@@ -136,7 +136,6 @@ dialog[open] { display: flex; flex-direction: column; overflow: hidden; } #dlgBo
 .collist li { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; padding: .3rem 0; border-bottom: 1px solid var(--line); }
 .collist li b { flex: 1; min-width: 6rem; }
 .collist button { min-height: 2rem; font-size: .85rem; }
-.addcol { margin-top: .5rem; } .addcol input { flex: 1; min-width: 8rem; }
 .offscreen { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 @media (min-width: 700px) { #mBtn { display: none !important; } }
 
@@ -174,8 +173,6 @@ dialog[open] { display: flex; flex-direction: column; overflow: hidden; } #dlgBo
 .mpanel .chips { margin: .25rem 0 .45rem; }
 .mpanel label.inline { margin: .2rem 0; }
 .mpanel .mhead2 { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: .55rem 0 .15rem; }
-.mpanel .ccrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .3rem; border-bottom: 1px solid var(--line); }
-.mpanel .ccrow span { display: inline-flex; gap: .3rem; } .mpanel .ccrow button { min-height: 1.9rem; font-size: .82rem; padding: 0 .5rem; }
 #menuRoot.phone .msub { display: flex; justify-content: space-between; margin-top: .45rem; }
 #menuRoot.phone .msub.on { border-color: var(--pink); color: var(--pink); }
 /* v3.9-8: View → Filters / Columns submenu in the desktop drop-down */
