@@ -39,17 +39,23 @@
     if (field !== '' || row.length) { row.push(field); rows.push(row); }
     return rows.filter(r => r.some(v => v.trim() !== ''));
   }
-  // Returns { headers: [...], data: [ {header: value} ], rawRows }
+  // Returns { headers: [...], data: [ {header: value} ], meta: {key: value} }
+  // v3.9-7: optional metadata lines BEFORE the header row start with '#', e.g.  # Data_Pulled: 2026-11 (or a bare year)
+  // They are stripped here (never become a header or a data row) and returned as meta.
   function parse(text) {
-    const rows = parseRows(text);
-    if (!rows.length) return { headers: [], data: [] };
+    const rows = parseRows(text), meta = {};
+    while (rows.length && String(rows[0][0] || '').trim().charAt(0) === '#') {
+      const line = rows.shift().join(',').trim().replace(/^#+\s*/, '');
+      const m = line.match(/^([^:=]+?)\s*[:=]\s*(.*?)[\s,]*$/); if (m) meta[m[1].trim()] = m[2].trim();
+    }
+    if (!rows.length) return { headers: [], data: [], meta };
     const headers = rows[0].map(h => h.trim());
     const data = rows.slice(1).map(r => {
       const o = {};
       headers.forEach((h, idx) => { if (h) o[h] = r[idx] !== undefined ? r[idx] : ''; });
       return o;
     });
-    return { headers, data };
+    return { headers, data, meta };
   }
   function esc(v) {
     if (v === null || v === undefined) v = '';

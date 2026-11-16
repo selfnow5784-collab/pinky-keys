@@ -1,9 +1,9 @@
-/* ui-fixes.js — "My Fixes" pop-up (Settings / Data tab): a basic sheet of the items you reviewed/edited, changed values highlighted
+/* ui-fixes.js (v3.9-7) — "My Fixes" pop-up (Settings / Data tab): a basic sheet of the items you reviewed/edited, changed values highlighted
    (original shown under it), flagged fields when a newer supplier CSV changed the same value, and Export CSV to send in. */
 (function (G) {
   'use strict';
   const { $, esc } = U;
-  const NOTE = 'Export and send this file so it can be combined into the next CSV update.';
+  const NOTE = 'Your changes are kept here, separate from the catalog file. Export and send this file so it can be combined into the next CSV update.';
   function table() {
     const list = Fixes.all(); if (!list.length) return '<p class="note">No fixes yet. Tap a row in the sheet, then Edit or Confirmed ✓.</p>';
     const base = ['years', 'make', 'model'], extra = [];
@@ -13,7 +13,7 @@
       if (!e) return `<td>${esc(v || '')}</td>`;
       return `<td class="chg">${esc(e.val || '(blank)')}<span class="was">was: ${esc(e.orig || '(blank)')}</span>${e.conflict !== undefined ? `<span class="warnline">⚠ Supplier now: ${esc(e.conflict || '(blank)')}<br><button data-keep="${esc(f.cid)}|${k}">Keep mine</button> <button data-take="${esc(f.cid)}|${k}">Use supplier</button></span>` : ''}</td>`; };
     return `<div class="tscroll"><table class="sheet fixes"><thead><tr>${cols.map(k => `<th>${esc(Fixes.LABELS[k])}</th>`).join('')}<th>Status</th><th></th></tr></thead><tbody>` +
-      list.map(f => { const r = Fixes.rowOf(f.cid), st = [f.confirmed ? 'Confirmed ✓' : '', Object.keys(f.fields).length ? 'Edited' : '', f.missing ? 'Not in current CSV' : ''].filter(Boolean).join(', ');
+      list.map(f => { const r = Fixes.rowOf(f.cid), st = [f.confirmed ? 'Confirmed ✓' : '', Object.keys(f.fields).length ? 'Edited' : '', f.missing ? 'Not in current CSV' : '', f.off && !f.missing ? 'Not applied to this file' : ''].filter(Boolean).join(', ');
         return `<tr>${cols.map(k => cell(f, r, k)).join('')}<td class="${f.confirmed ? 'okc' : ''}">${esc(st)}</td><td><button data-undo="${esc(f.cid)}" title="Undo this fix">Undo</button></td></tr>`; }).join('') + '</tbody></table></div>';
   }
   function body() { return `<p class="fixnote">${esc(NOTE)}</p><p class="note">${Fixes.count().toLocaleString()} item(s). Highlighted = changed by you.</p><div id="fixTable">${table()}</div>`; }

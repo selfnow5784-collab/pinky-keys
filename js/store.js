@@ -9,14 +9,21 @@
   const KINDS = ['catalog', 'vehicles', 'inventory', 'files'];
   const st = { catalog: [], vehicles: [], inventory: [], files: [] }, byId = {}, dirty = {}, gone = {};
   KINDS.forEach(k => { byId[k] = new Map(); dirty[k] = new Set(); gone[k] = new Set(); });
-  const prefs = { autosave: true, floating: true, dark: true, textSize: 1, theme: '', rowSize: 'compact', cols: null };
+  const prefs = { autosave: true, floating: true, dark: true, textSize: 1, theme: '', rowSize: 'compact', cols: null, fab: true, autoSettings: true };
+  // v3.9-7: "settings" = View choices only (theme, row size, columns, scroll-to-top button). With File → Auto-save settings OFF,
+  // changes to these apply now but are only written to storage by File → Save current settings. Catalog/stock data always saves.
+  const VIEW_KEYS = ['theme', 'dark', 'rowSize', 'cols', 'fab'];
+  const pick = o => { const x = {}; VIEW_KEYS.forEach(k => { x[k] = o[k] === undefined ? null : JSON.parse(JSON.stringify(o[k])); }); return x; };
+  let savedView = pick(prefs);
+  const autoOn = () => prefs.autoSettings !== false;
+  const persistable = () => autoOn() ? prefs : Object.assign({}, prefs, savedView);
   let seq = Date.now(), listeners = [], unsaved = false, autoT;
   const newId = k => k[0] + (seq++).toString(36);
   function changed(what) { unsaved = true; listeners.forEach(f => f(what)); if (prefs.autosave) { clearTimeout(autoT); autoT = setTimeout(save, 400); } }
   async function load() {
     await DB.open();
     for (const k of KINDS) { st[k] = await DB.all(k); byId[k] = new Map(st[k].map(r => [r.id, r])); }
-    Object.assign(prefs, (await DB.getMeta('prefs')) || {}); unsaved = false;
+    Object.assign(prefs, (await DB.getMeta('prefs')) || {}); savedView = pick(prefs); unsaved = false;
   }
   function add(kind, rows, fileId) {
     rows.forEach(r => { r.id = r.id || newId(kind); if (fileId) r.file = fileId; if (r.verified == null && kind !== 'files') r.verified = false;
@@ -38,10 +45,15 @@
   async function save() {
     clearTimeout(autoT);
     for (const k of KINDS) { if (!dirty[k].size && !gone[k].size) continue;
-      const puts = [...dirty[k]].map(id => byId[k].get(id)).filter(Boolean).map(r => { const o = Object.assign({}, r); Object.keys(o).forEach(x => { if (x[0] === '_') delete o[x]; }); return o; });
+      // v3.9-7: catalog rows are stored as the CSV gave them; My Fixes values are a separate overlay (Fixes.toBase puts the CSV value back)
+      const puts = [...dirty[k]].map(id => byId[k].get(id)).filter(Boolean).map(r => { const o = Object.assign({}, r); Object.keys(o).forEach(x => { if (x[0] === '_') delete o[x]; }); if (k === 'catalog' && G.Fixes && Fixes.toBase) Fixes.toBase(o); return o; });
       await DB.write(k, puts, [...gone[k]]); dirty[k].clear(); gone[k].clear(); }
-    await DB.setMeta('prefs', prefs); unsaved = false; listeners.forEach(f => f('saved'));
+    if (autoOn()) savedView = pick(prefs);
+    await DB.setMeta('prefs', persistable()); unsaved = false; listeners.forEach(f => f('saved'));
   }
-  async function setPref(k, v) { prefs[k] = v; await DB.setMeta('prefs', prefs); listeners.forEach(f => f('prefs')); }
-  G.Store = { st, byId, prefs, load, add, update, mark, remove, replaceKind, save, setPref, changed: what => listeners.forEach(f => f(what)), on: f => listeners.push(f), get unsaved() { return unsaved; }, markAllDirty: () => KINDS.forEach(k => st[k].forEach(r => dirty[k].add(r.id))) };
+  async function setPref(k, v) { prefs[k] = v; if (autoOn()) savedView = pick(prefs); await DB.setMeta('prefs', persistable()); listeners.forEach(f => f('prefs')); }
+  async function saveSettings() { savedView = pick(prefs); await DB.setMeta('prefs', persistable()); listeners.forEach(f => f('prefs')); }
+  async function setAutoSettings(on) { prefs.autoSettings = !!on; if (on) savedView = pick(prefs); await DB.setMeta('prefs', persistable()); listeners.forEach(f => f('prefs')); }
+  const settingsUnsaved = () => JSON.stringify(pick(prefs)) !== JSON.stringify(savedView);
+  G.Store = { st, byId, prefs, VIEW_KEYS, saveSettings, setAutoSettings, settingsUnsaved, savedView: () => savedView, load, add, update, mark, remove, replaceKind, save, setPref, changed: what => listeners.forEach(f => f(what)), on: f => listeners.push(f), get unsaved() { return unsaved; }, markAllDirty: () => KINDS.forEach(k => st[k].forEach(r => dirty[k].add(r.id))) };
 })(window);
