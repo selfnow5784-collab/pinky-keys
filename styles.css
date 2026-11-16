@@ -1,9 +1,11 @@
-/* styles.css (v3.9) — black/white with hot pink accents. body.light = Light mode; body.alt = Alternating gray (UI stays dark,
-   only the chart gets white/gray rows with black text). body.compact / body.big = row size. @media print = clean table. */
-:root { --pink: #ff1493; --bg: #000; --fg: #fff; --card: #141414; --line: #3a3a3a; --muted: #bbb; --ok: #1db954; --bad: #e0182d; --amber: #ffb000; --hd: #262626; --fix: #4a1030;
-  --tbg: var(--bg); --tbg2: var(--bg); --tfg: var(--fg); --thd: var(--hd); --thf: var(--fg); --tline: var(--line); }
+/* styles.css (v3.9-7) — black/white with hot pink accents. body.light = Light mode; body.alt = Alternating white/gray (UI stays dark,
+   only the chart gets white/gray rows with black text); body.altdark = Alternating black/gray rows with white text. body.compact / body.big = row size. @media print = clean table. */
+:root { --pink: #ff1493; --bg: #000; --fg: #fff; --card: #141414; --line: #3a3a3a; --muted: #bbb; --ok: #1db954; --bad: #e0182d; --amber: #ffb000; --hd: #262626; --fix: #4a1030; }
+/* sheet colours follow the body theme; set on body (not :root) so body.light's --bg/--fg reach them (v3.9-6 Light left the sheet black) */
+body { --tbg: var(--bg); --tbg2: var(--bg); --tfg: var(--fg); --thd: var(--hd); --thf: var(--fg); --tline: var(--line); }
 body.light { --bg: #fff; --fg: #111; --card: #f4f4f4; --line: #ccc; --muted: #555; --hd: #eee; --fix: #ffe0f0; }
 body.alt { --tbg: #fff; --tbg2: #e3e3e3; --tfg: #000; --thd: #9e9e9e; --thf: #000; --tline: #b5b5b5; --fixt: #ffd6ec; }
+body.altdark { --tbg: #000; --tbg2: #333; --tfg: #fff; --thd: #555; --thf: #fff; --tline: #4a4a4a; }
 * { box-sizing: border-box; }
 html { font-size: 18px; overflow-x: clip; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 1rem/1.4 system-ui, -apple-system, Roboto, sans-serif; padding-bottom: 4rem; overflow-x: clip; }
@@ -69,7 +71,7 @@ td.empty { text-align: center; color: var(--muted); padding: 1rem !important; }
 .grab { width: 3rem; height: .35rem; border-radius: 1rem; background: var(--line); margin: .3rem auto .5rem; }
 #cardBody h2 { margin: .1rem 0; font-size: 1.15rem; } .pname { margin: .1rem 0 .5rem; font-weight: 600; }
 .kv { display: flex; gap: .6rem; padding: .28rem 0; border-bottom: 1px solid var(--line); font-size: .95rem; } .kv .k { flex: 0 0 8.5rem; color: var(--muted); } .kv .v { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.kv a { color: var(--pink); font-weight: 700; } .blank { color: var(--muted); }
+.kv a { color: var(--pink); font-weight: 700; } .sheet.main td.c-productUrl a { color: var(--pink); font-weight: 700; } .blank { color: var(--muted); }
 .v.fixed { color: var(--pink); font-weight: 700; } .was { display: block; font-size: .78rem; color: var(--muted); font-weight: 400; } .warnline { display: block; font-size: .8rem; color: var(--amber); font-weight: 700; }
 .revbox { border-left: 4px solid var(--amber); background: var(--card); padding: .4rem .55rem; margin: .3rem 0 .5rem; font-size: .95rem; } .revbox.ok { border-color: var(--ok); }
 .revbox details { font-size: .78rem; color: var(--muted); } .revbox summary { cursor: pointer; }
@@ -158,3 +160,44 @@ dialog[open] { display: flex; flex-direction: column; overflow: hidden; } #dlgBo
   .catinfo { flex-direction: row; }
   .catcard { flex: 1; min-width: 0; }
 }
+
+/* v3.9-7: toolbar = ⟳ Refresh + applied filter chips (Filters / Columns are drop-downs in the menu) */
+.toolbar { flex-wrap: wrap; }
+#refreshBtn { flex: 0 0 auto; }
+#fChips { display: inline-flex; flex-wrap: wrap; gap: .3rem; min-width: 0; } #fChips[hidden] { display: none; }
+.chip.fchip { min-height: 1.9rem; padding: .05rem .55rem; font-size: .82rem; }
+#menuRoot .mh { font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: .35rem .8rem .05rem; }
+#menuRoot.phone .mh { padding: .3rem 0 0; }
+#menuRoot.wide .mt.on { color: var(--pink); }
+#menuRoot.wide .mdrop { max-height: calc(100vh - 7rem); overflow-y: auto; }
+#menuRoot.wide .mdrop-panel { width: 26rem; max-width: calc(100vw - 1rem); padding: .4rem .6rem; }
+.mpanel .chips { margin: .25rem 0 .45rem; }
+.mpanel label.inline { margin: .2rem 0; }
+.mpanel .mhead2 { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: .55rem 0 .15rem; }
+.mpanel .ccrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .3rem; border-bottom: 1px solid var(--line); }
+.mpanel .ccrow span { display: inline-flex; gap: .3rem; } .mpanel .ccrow button { min-height: 1.9rem; font-size: .82rem; padding: 0 .5rem; }
+#menuRoot.phone .msub { display: flex; justify-content: space-between; margin-top: .45rem; }
+#menuRoot.phone .msub.on { border-color: var(--pink); color: var(--pink); }
+/* v3.9-8: View → Filters / Columns submenu in the desktop drop-down */
+#menuRoot.wide .msub { display: flex; justify-content: space-between; }
+#menuRoot.wide .msub.on { color: var(--pink); }
+#menuRoot.wide .msub.open { background: var(--hd); }
+#menuRoot.wide .msubp { padding: .3rem .7rem .5rem; border-bottom: 1px solid var(--line); }
+#menuRoot.wide .mdrop-sub { width: 26rem; max-width: calc(100vw - 1rem); }
+#menuRoot.phone .msubp { border: 1px solid var(--line); border-top: 0; border-radius: 0 0 .5rem .5rem; padding: .3rem .5rem .4rem; background: var(--card); }
+#menuRoot.phone .msubp .chip:not(.on) { background: var(--bg); }
+/* Data tab: one loaded file */
+.loaded { background: var(--card); border: 1px solid var(--line); border-radius: .5rem; padding: .65rem .75rem; margin: .45rem 0 .5rem; }
+.loaded .k { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.loaded .fn { font-weight: 700; margin: .15rem 0 .1rem; overflow-wrap: anywhere; }
+.loaded .meta { color: var(--muted); font-size: .85rem; }
+.loaded.empty .fn { color: var(--muted); font-weight: 600; }
+.finfo { margin: .2rem 0 .6rem; display: grid; grid-template-columns: 1fr; gap: 0; }
+.finfo > div { display: flex; justify-content: space-between; gap: .8rem; padding: .35rem .1rem; border-bottom: 1px solid var(--line); }
+.finfo dt { color: var(--muted); } .finfo dd { margin: 0; font-weight: 700; text-align: right; }
+.srcpill { display: inline-block; border: 1px solid var(--line); border-radius: 1rem; padding: 0 .5rem; margin: 0 0 .15rem .2rem; font-size: .9rem; }
+.srcpill small { color: var(--muted); font-weight: 600; }
+#dataMore { margin-top: 1.4rem; border-top: 1px solid var(--line); padding-top: .4rem; }
+#dataMore summary { cursor: pointer; color: var(--muted); font-size: .9rem; padding: .3rem 0; }
+#dataMore button.danger { color: var(--bad); border-color: var(--bad); } button:disabled { opacity: .45; cursor: default; }
+@media (min-width: 700px) { #tab-data { max-width: 40rem; } }
