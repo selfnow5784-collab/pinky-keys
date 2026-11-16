@@ -197,7 +197,5 @@ dialog[open] { display: flex; flex-direction: column; overflow: hidden; } #dlgBo
 .finfo dt { color: var(--muted); } .finfo dd { margin: 0; font-weight: 700; text-align: right; }
 .srcpill { display: inline-block; border: 1px solid var(--line); border-radius: 1rem; padding: 0 .5rem; margin: 0 0 .15rem .2rem; font-size: .9rem; }
 .srcpill small { color: var(--muted); font-weight: 600; }
-#dataMore { margin-top: 1.4rem; border-top: 1px solid var(--line); padding-top: .4rem; }
-#dataMore summary { cursor: pointer; color: var(--muted); font-size: .9rem; padding: .3rem 0; }
-#dataMore button.danger { color: var(--bad); border-color: var(--bad); } button:disabled { opacity: .45; cursor: default; }
+button:disabled { opacity: .45; cursor: default; }
 @media (min-width: 700px) { #tab-data { max-width: 40rem; } }
