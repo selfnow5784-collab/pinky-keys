@@ -52,8 +52,19 @@
     await DB.setMeta('prefs', persistable()); unsaved = false; listeners.forEach(f => f('saved'));
   }
   async function setPref(k, v) { prefs[k] = v; if (autoOn()) savedView = pick(prefs); await DB.setMeta('prefs', persistable()); listeners.forEach(f => f('prefs')); }
+  // v3.9-10: keep only column ids the app knows (custom columns were removed); drops repeats and anything else in the
+  // live settings and in the saved settings snapshot. Returns true when something was cleaned.
+  async function cleanCols(known) {
+    const fix = v => { if (v == null) return v; if (!Array.isArray(v)) return null; const out = v.filter((k, i) => typeof k === 'string' && known.has(k) && v.indexOf(k) === i); return out; };
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const nc = fix(prefs.cols), ns = savedView ? fix(savedView.cols) : null; let ch = false;
+    if (!same(nc, prefs.cols)) { prefs.cols = nc; ch = true; }
+    if (savedView && !same(ns, savedView.cols)) { savedView.cols = ns; ch = true; }
+    if (ch) await DB.setMeta('prefs', persistable());
+    return ch;
+  }
   async function saveSettings() { savedView = pick(prefs); await DB.setMeta('prefs', persistable()); listeners.forEach(f => f('prefs')); }
   async function setAutoSettings(on) { prefs.autoSettings = !!on; if (on) savedView = pick(prefs); await DB.setMeta('prefs', persistable()); listeners.forEach(f => f('prefs')); }
   const settingsUnsaved = () => JSON.stringify(pick(prefs)) !== JSON.stringify(savedView);
-  G.Store = { st, byId, prefs, VIEW_KEYS, saveSettings, setAutoSettings, settingsUnsaved, savedView: () => savedView, load, add, update, mark, remove, replaceKind, save, setPref, changed: what => listeners.forEach(f => f(what)), on: f => listeners.push(f), get unsaved() { return unsaved; }, markAllDirty: () => KINDS.forEach(k => st[k].forEach(r => dirty[k].add(r.id))) };
+  G.Store = { st, byId, prefs, VIEW_KEYS, cleanCols, saveSettings, setAutoSettings, settingsUnsaved, savedView: () => savedView, load, add, update, mark, remove, replaceKind, save, setPref, changed: what => listeners.forEach(f => f(what)), on: f => listeners.push(f), get unsaved() { return unsaved; }, markAllDirty: () => KINDS.forEach(k => st[k].forEach(r => dirty[k].add(r.id))) };
 })(window);

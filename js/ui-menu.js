@@ -1,4 +1,4 @@
-/* ui-menu.js (v3.9-9) — classic menu bar on wide screens; a single ☰ menu on phones with the same items.
+/* ui-menu.js (v3.9-10) — classic menu bar on wide screens; a single ☰ menu on phones with the same items.
    File: Print, Share (PDF of the current view), Auto-save settings, Save current settings.
    View: Row size (Compact / Expanded), Theme (Dark, Light, Alternating white/gray, Alternating black/gray),
          Interface (scroll-to-top button), Hidden rows.
@@ -77,13 +77,14 @@
     if (k === 'fab') { await Store.setPref('fab', Store.prefs.fab === false); return; }
     if (k === 'hidden') { App.show('data'); return DataUI.openHidden(); }
     if (k === 'help') return DataUI.openHelp();
-    if (k === 'about') return U.dialog("Pinky's Auto Reference and Inventory", '<p>Version 3.9-9. Offline key reference and in-stock lookup for Pinky\'s Locksmithing.</p>', [{ label: 'Close', value: true }]);
+    if (k === 'about') return U.dialog("Pinky's Auto Reference and Inventory", '<p>Version 3.9-10. Offline key reference and in-stock lookup for Pinky\'s Locksmithing.</p>', [{ label: 'Close', value: true }]);
   }
   function init() {
     $('#mBtn').onclick = e => { e.stopPropagation(); open = (open === 'phone') ? '' : 'phone'; if (!open) sub = ''; render(); };
     $('#menuRoot').addEventListener('click', e => {
       const t = e.target.closest('[data-mtop]'); if (t) { e.stopPropagation(); toggleTop(t.dataset.mtop); return; }
-      const s = e.target.closest('[data-sub]'); if (s) { e.stopPropagation(); App.show('reference'); sub = sub === s.dataset.sub ? '' : s.dataset.sub; render(); return; }
+      const s = e.target.closest('[data-sub]'); if (s) { e.stopPropagation(); sub = sub === s.dataset.sub ? '' : s.dataset.sub;
+        try { App.show('reference'); } catch (err) { console.warn('sheet redraw failed', err); } render(); return; } // v3.9-10: a sheet error can't block the submenu
       const a = e.target.closest('[data-act]'); if (a) { e.stopPropagation(); act(a.dataset.act); }
     });
     // composedPath: a chip tap re-draws the drop-down, so e.target may already be detached when this runs

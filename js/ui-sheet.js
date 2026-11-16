@@ -21,9 +21,7 @@
   let lastRows = [];
   function visCols() {
     const sel = Store.prefs.cols;
-    const base = COLS.filter(c => c.fixed || (sel ? sel.includes(c.key) : c.on));
-    const extra = Custom.list().map(c => ({ key: Custom.keyOf(c), label: c.label, custom: true, cid: c.id, on: true, sort: r => Custom.val(r.id, c.id) }));
-    return base.concat(extra.filter(c => !sel || sel.includes(c.key)));
+    return COLS.filter(c => c.fixed || (Array.isArray(sel) ? sel.includes(c.key) : c.on)); // unknown ids in sel are ignored
   }
   const typeLabel = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : 'No type';
   function typeList() { const m = new Map(); Store.st.catalog.forEach(r => { if (Hidden.isHidden(r.id)) return; m.set(r.type || '', (m.get(r.type || '') || 0) + 1); }); return [...m].sort((a, b) => b[1] - a[1]).map(x => x[0]); }
@@ -35,8 +33,10 @@
     if (st.inStock) out = out.filter(r => stockQ(r) > 0);
     if (st.review) out = out.filter(Fixes.needsReview);
     if (st.oem) out = out.filter(r => r.oem);
-    if (st.sortKey) {
-      const cols = visCols().concat(COLS), c = cols.find(x => x.key === st.sortKey) || COLS.find(x => x.key === st.sortKey), g = (c && c.sort) || (r => (c && c.custom ? Custom.val(r.id, c.cid) : (r[c.key] || ''))), d = st.dir;
+    const sc = st.sortKey && COLS.find(x => x.key === st.sortKey);
+    if (st.sortKey && !sc) { st.sortKey = null; st.dir = 1; } // v3.9-10: a sort on a column that no longer exists is dropped (it used to throw and break the menu)
+    if (sc) {
+      const c = sc, g = c.sort || (r => r[c.key] || ''), d = st.dir;
       out = out.slice().sort((a, b) => { const x = g(a), y = g(b); return d * (typeof x === 'number' ? x - y : String(x).localeCompare(String(y), undefined, { numeric: true })); }); }
     return out;
   }
@@ -58,21 +58,18 @@
       <div class="chips">${chip('fflag', 'inStock', st.inStock, 'In stock')}${chip('fflag', 'review', st.review, 'Needs review')}${chip('fflag', 'oem', st.oem, 'Has OEM')}</div>
       <div class="row"><button type="button" id="fDone" class="primary">Done</button>${nFilters() ? '<button type="button" id="fClear2">Clear all</button>' : ''}</div></div>`;
   }
-  // Columns drop-down (in the menu): tick = shown right away. Custom columns: add, rename, delete here.
+  // Columns drop-down (in the menu): tick = shown right away.
   function colsHtml() {
-    const sel = new Set(visCols().map(c => c.key)), extras = Custom.list();
+    const sel = new Set(visCols().map(c => c.key));
     return `<div class="mpanel cpanel"><p class="note">Year, Make, Model and Product name always show.</p>` +
-      COLS.filter(c => !c.fixed).map(c => `<label class="inline"><input type="checkbox" class="colcb" value="${c.key}" ${sel.has(c.key) ? 'checked' : ''}> ${esc(c.label)}</label>`).join('') +
-      `<div class="mhead2">Custom columns</div>` +
-      (extras.length ? extras.map(c => `<div class="ccrow"><label class="inline"><input type="checkbox" class="colcb" value="${esc(Custom.keyOf(c))}" ${sel.has(Custom.keyOf(c)) ? 'checked' : ''}> ${esc(c.label)}</label><span><button type="button" data-cren="${esc(c.id)}">Rename</button><button type="button" data-cdel="${esc(c.id)}" class="danger">Delete</button></span></div>`).join('') : '<p class="note">None yet.</p>') +
-      `<div class="row addcol"><input id="newColName" placeholder="New column, e.g. Bin location" autocomplete="off"><button type="button" id="colAddIn">Add</button></div></div>`;
+      COLS.filter(c => !c.fixed).map(c => `<label class="inline"><input type="checkbox" class="colcb" value="${c.key}" ${sel.has(c.key) ? 'checked' : ''}> ${esc(c.label)}</label>`).join('') + '</div>';
   }
   async function setCol(key, on) {
+    if (!COLS.some(c => c.key === key && !c.fixed)) return;
     const cur = visCols().map(c => c.key).filter(k => !COLS.find(c => c.key === k && c.fixed));
     const next = on ? (cur.includes(key) ? cur : cur.concat(key)) : cur.filter(k => k !== key);
     await Store.setPref('cols', next); render();
   }
-  async function addCol(name) { const c = await Custom.add(name); if (!c) { U.toast('Give the column a name that is not already used', true); return null; } render(); if (G.MenuUI) MenuUI.render(); return c; }
   function linkHtml(s) {
     const parts = String(s || '').split(/\s*;\s*/).map(x => x.trim()).filter(Boolean);
     if (!parts.length) return '';
@@ -81,7 +78,7 @@
   const cellVal = (r, c) => {
     if (c.key === 'stock') return '';
     if (c.key === 'productUrl') return linkHtml(r.productUrl || r.url || '');
-    return esc(c.custom ? Custom.val(r.id, c.cid) : (r[c.key] || ''));
+    return esc(r[c.key] || '');
   };
   function renderSelBar() {
     const b = $('#selBar'); if (!b) return; const n = st.sel.size; b.hidden = n === 0; if (!n) return;
@@ -93,14 +90,14 @@
     const n = lastRows.length, slice = lastRows.slice(0, st.shown);
     const allOn = n > 0 && lastRows.every(r => st.sel.has(r.id)), some = lastRows.some(r => st.sel.has(r.id));
     const th = `<th class="c-sel" title="Select all visible"><input type="checkbox" id="selAll" aria-label="Select all visible" ${allOn ? 'checked' : ''}></th>` +
-      cols.map(c => `<th data-sort="${c.key}" class="c-${c.custom ? 'custom' : c.key}${st.sortKey === c.key ? (st.dir > 0 ? ' asc' : ' desc') : ''}">${esc(c.label)}</th>`).join('');
+      cols.map(c => `<th data-sort="${c.key}" class="c-${c.key}${st.sortKey === c.key ? (st.dir > 0 ? ' asc' : ' desc') : ''}">${esc(c.label)}</th>`).join('');
     const body = slice.map(r => {
       const rev = Fixes.needsReview(r), mine = Users.isMine(r), on = st.sel.has(r.id);
       const cls = [rev ? 'rev' : '', mine ? 'mine' : '', on ? 'picked' : ''].filter(Boolean).join(' ');
       return `<tr data-id="${esc(r.id)}"${cls ? ` class="${cls}"` : ''}>` +
         `<td class="c-sel"><input type="checkbox" data-sel="${esc(r.id)}" ${on ? 'checked' : ''} aria-label="Select row"></td>` +
         cols.map(c => c.key === 'stock' ? Stock.cell(r, stockQ(r))
-          : `<td class="c-${c.custom ? 'custom' : c.key}${!c.custom && Fixes.edited(r, c.key) ? ' fixed' : ''}">${c.key === 'years' && rev ? '<span class="dot" title="Needs review"></span>' : ''}${cellVal(r, c)}</td>`).join('') +
+          : `<td class="c-${c.key}${Fixes.edited(r, c.key) ? ' fixed' : ''}">${c.key === 'years' && rev ? '<span class="dot" title="Needs review"></span>' : ''}${cellVal(r, c)}</td>`).join('') +
         '</tr>';
     }).join('');
     $('#count').textContent = n.toLocaleString() + (n === 1 ? ' row' : ' rows');
@@ -113,7 +110,6 @@
   const refresh = () => { st.shown = PAGE; render(); };
   function displayVal(r, c) {
     if (c.key === 'stock') return stockQ(r) > 0 ? 'Yes' + (stockQ(r) > 1 ? ' (' + stockQ(r) + ')' : '') : 'No';
-    if (c.custom) return Custom.val(r.id, c.cid);
     return r[c.key] || '';
   }
   const selectedRows = () => lastRows.filter(r => st.sel.has(r.id));
@@ -156,18 +152,15 @@
     const body = field('years', 'Year(s)') + field('make', 'Make') + field('model', 'Model') + field('product', 'Product name') +
       field('type', 'Type') + field('fcc', 'FCC ID') + field('chip', 'Chip') + field('blade', 'Blade') + field('oem', 'OEM part #') +
       field('pn', 'Part #') + field('price', 'Price') + field('notes', 'Notes') +
-      Custom.list().map(c => `<label class="ed">${esc(c.label)}<input data-ck="${c.id}" value=""></label>`).join('') +
       `<label class="inline big"><input type="checkbox" id="akStock"> In stock</label>`;
     const v = await U.dialog('Add item', body, [{ label: 'Cancel', value: null }, { label: 'Add', cls: 'primary', value: () => {
       const o = {}; document.querySelectorAll('#dlgBody [data-ak]').forEach(i => { o[i.dataset.ak] = i.value; });
-      const cv = {}; document.querySelectorAll('#dlgBody [data-ck]').forEach(i => { if (i.value.trim()) cv[i.dataset.ck] = i.value.trim(); });
-      return { o, cv, stock: !!( $('#akStock') && $('#akStock').checked ) };
+      return { o, stock: !!( $('#akStock') && $('#akStock').checked ) };
     } }]);
     if (!v) return;
     if (!(v.o.product || v.o.pn || v.o.make)) return U.toast('Give it a product name, part # or make', true);
     if (!v.o.product) v.o.product = v.o.pn || [v.o.make, v.o.model].filter(Boolean).join(' ');
     const r = Users.add(v.o);
-    for (const [id, val] of Object.entries(v.cv)) await Custom.setVal(r.id, id, val);
     if (v.stock) await Stock.set(r, true);
     document.body.dataset.added = r.id; SheetUI.refresh();
   }
@@ -179,16 +172,13 @@
       const t = e.target;
       if (t.closest('#fClear2')) { clearFilters(); renderFilters(); refresh(); return; }
       if (t.closest('#fDone')) { if (G.MenuUI) MenuUI.close(); return; }
-      if (t.closest('#colAddIn')) { const i = $('#newColName'); addCol(i ? i.value : ''); return; }
-      const cr = t.closest('[data-cren]'); if (cr && t.closest('#menuRoot')) { const id = cr.dataset.cren; if (G.MenuUI) MenuUI.close(); DataUI.renameColumn(id); return; }
-      const cd = t.closest('[data-cdel]'); if (cd && t.closest('#menuRoot')) { const id = cd.dataset.cdel; if (G.MenuUI) MenuUI.close(); DataUI.deleteColumn(id); return; }
       const ty = t.closest('[data-ftype]'); if (ty) { const v = ty.dataset.ftype; st.types.has(v) ? st.types.delete(v) : st.types.add(v); renderFilters(); refresh(); return; }
       const fl = t.closest('[data-fflag]'); if (fl) { st[fl.dataset.fflag] = !st[fl.dataset.fflag]; renderFilters(); refresh(); return; }
     });
     $('#sheet').addEventListener('click', e => {
       const t = e.target;
       if (t.closest('#more')) { st.shown += PAGE; render(); return; }
-      const h = t.closest('th[data-sort]'); if (h) { const k = h.dataset.sort; if (st.sortKey === k) st.dir = -st.dir; else { st.sortKey = k; st.dir = 1; } refresh(); return; }
+      const h = t.closest('th[data-sort]'); if (h && COLS.some(c => c.key === h.dataset.sort)) { const k = h.dataset.sort; if (st.sortKey === k) st.dir = -st.dir; else { st.sortKey = k; st.dir = 1; } refresh(); return; }
       if (t.closest('a') || t.closest('.stk') || t.closest('.c-sel')) return;
       const tr = t.closest('tr[data-id]'); if (tr) { const r = Store.byId.catalog.get(tr.dataset.id); if (r) Card.open(r); }
     });
@@ -210,8 +200,7 @@
     });
     $('#undoBtn').onclick = async () => { await Hidden.undo(); refresh(); };
     document.addEventListener('change', e => { const t = e.target; if (t.classList && t.classList.contains('colcb') && t.closest('#menuRoot')) setCol(t.value, t.checked); });
-    document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target && e.target.id === 'newColName') { e.preventDefault(); addCol(e.target.value); } });
     renderFilters();
   }
-  G.SheetUI = { init, render, refresh, renderFilters, filtersHtml, colsHtml, setCol, addCol, resetView, clearFilters, nFilters, chipsSummary, displayVal, rows: () => lastRows, COLS, state: st, printView, exportCsv, selectAll, clearSel, hideSelected, markStock, selectedRows, wantRows, promptAdd, visCols };
+  G.SheetUI = { init, render, refresh, renderFilters, filtersHtml, colsHtml, setCol, resetView, clearFilters, nFilters, chipsSummary, displayVal, rows: () => lastRows, COLS, state: st, printView, exportCsv, selectAll, clearSel, hideSelected, markStock, selectedRows, wantRows, promptAdd, visCols };
 })(window);

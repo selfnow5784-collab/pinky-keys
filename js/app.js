@@ -1,4 +1,4 @@
-/* app.js (v3.9-7) — starts the app: loads data (including My Fixes, hidden rows, custom columns,
+/* app.js (v3.9-10) — starts the app: loads data (including My Fixes, hidden rows,
    and a one-time migrate of old hand-added Inventory items), two tabs (Reference sheet +
    Data), the classic / ☰ menu, theme and row size, search index, autosave, and
    the service worker (works offline). */
@@ -25,8 +25,17 @@
   function fabCheck() { const b = $('#topFab'); if (b) b.hidden = Store.prefs.fab === false || scrolled() < 300; }
   function toTop() { const sc = document.querySelector('#sheet .tscroll'); if (sc) sc.scrollTo({ top: 0, behavior: 'smooth' }); window.scrollTo({ top: 0, behavior: 'smooth' }); }
   const rebuild = U.debounce(() => { Lookup.rebuild(Store.st); if (tab === 'reference') SheetUI.render(); }, 250);
+  // v3.9-10: custom columns are gone. Remove what older versions stored for them (definitions, per-row values) and any
+  // column id the app doesn't know from the visible-columns setting and the saved settings (e.g. a deleted 'BlueRocket').
+  async function purgeCustomCols() {
+    let n = 0;
+    for (const k of ['customCols', 'customVals']) if ((await DB.getMeta(k)) !== undefined) { await DB.delMeta(k); n++; }
+    if (await Store.cleanCols(new Set(SheetUI.COLS.map(c => c.key)))) n++;
+    // (no localStorage: the app never stored anything there, and the github.io origin is shared with other sites)
+    document.body.dataset.purged = n;
+  }
   async function boot() {
-    try { await Store.load(); await Fixes.load(); await Custom.load(); await Hidden.load(); await Users.migrate(); } catch (e) { U.toast('Could not open storage: ' + e.message, true, 10000); }
+    try { await Store.load(); await Fixes.load(); await Hidden.load(); await purgeCustomCols(); await Users.migrate(); } catch (e) { U.toast('Could not open storage: ' + e.message, true, 10000); }
     Store.prefs.autosave = true;
     Lookup.rebuild(Store.st); applyPrefs();
     [SheetUI, Card, DataUI, MenuUI].forEach(m => m.init());
@@ -38,7 +47,7 @@
       if (what === 'prefs') { applyPrefs(); if (tab === 'reference') SheetUI.render(); if (typeof MenuUI !== 'undefined') MenuUI.render(); return; }
       if (what === 'saved' || what === 'mark') return;
       if (what === 'fixes') { if (tab === 'data') DataUI.renderFiles(); return; }
-      if (what === 'hidden' || what === 'custom') { if (tab === 'reference') SheetUI.render(); DataUI.renderCounts(); return; }
+      if (what === 'hidden') { if (tab === 'reference') SheetUI.render(); DataUI.renderCounts(); return; }
       rebuild(); if (what === 'files' || tab === 'data') DataUI.renderFiles();
     });
     window.addEventListener('beforeunload', e => { if (Store.unsaved) { Store.save(); } });

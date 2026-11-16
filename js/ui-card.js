@@ -4,7 +4,7 @@
    hidden; Notes leave out what already has its own line (FCC, chip, freq, blade, PN, price, source). No "Source link" or
    "Supplier's years" lines. Link stays clickable when a real http(s) URL is there.
    Shows
-   custom columns, the review reason in plain words, In-stock toggle, Edit, Hide, and (for your items)
+   the review reason in plain words, In-stock toggle, Edit, Hide, and (for your items)
    Delete. Supplier edits go to My Fixes; your items are saved on the row itself. Swipe down / tap
    outside / Close = back to the sheet. */
 (function (G) {
@@ -56,8 +56,6 @@
       : '<span class="blank">—</span>';
     return `<div class="kv"><span class="k">${esc(label)}</span><span class="v">${inner}</span></div>`;
   }
-  function customView(r) { return Custom.list().map(c => fieldRow(r, '', c.label, Custom.val(r.id, c.id))).join(''); }
-  function customEdit(r) { return Custom.list().map(c => `<label class="ed">${esc(c.label)}<input data-ck="${c.id}" value="${esc(Custom.val(r.id, c.id))}"></label>`).join(''); }
   function view(r) {
     const q = Stock.qty(r), conf = Fixes.isConfirmed(r), plain = r.review ? Reasons.plain(r.review) : [], mine = Users.isMine(r);
     const head = !mine && ['years', 'make', 'model', 'product'].some(k => Fixes.edited(r, k)) ? `<p class="note fixedtxt">Edited by you: ${['years', 'make', 'model', 'product'].filter(k => Fixes.edited(r, k)).map(k => esc(Fixes.LABELS[k]) + ' (was ' + esc(Fixes.edited(r, k).orig || 'blank') + ')').join(', ')}</p>` : '';
@@ -65,7 +63,6 @@
     $('#cardBody').innerHTML = `<h2>${esc([r.years, r.make, r.model].filter(Boolean).join(' ') || (mine ? 'My item' : ''))}</h2><p class="pname">${r.product ? esc(r.product) : '<span class="blank">(no product name given)</span>'}${mine ? ' <span class="minebadge">My item</span>' : ''}</p>${head}
       ${r.review ? `<div class="revbox${conf ? ' ok' : ''}"><b>${conf ? 'Confirmed ✓ by you' : 'Needs review'}:</b> ${esc(plain.join(' · '))}<details><summary>Details</summary><p>${esc(r.review)}</p></details></div>` : ''}
       ${fields.map(([k, l]) => { const v = shown(r, k); return fieldRow(r, k, l, v) + (k === 'oem' && r.oem ? sourceRow('OEM source', r.oemSource) : '') + (k === 'strattec' && v ? sourceRow('Strattec source', r.strattecSource) : ''); }).join('')}
-      ${customView(r)}
       ${mine ? '' : linkRow('Link', r.productUrl || r.url || '')}`;
     $('#cardFoot').innerHTML = `<label class="stk big"><input type="checkbox" id="cStock" ${q > 0 ? 'checked' : ''}> In stock${q > 1 ? ' (' + q + ')' : ''}</label>
       <button id="cEdit">Edit</button>${!mine && r.review ? `<button id="cConf" class="${conf ? 'ok' : 'primary'}">${conf ? 'Confirmed ✓ (undo)' : 'Confirmed ✓'}</button>` : ''}
@@ -76,13 +73,12 @@
     const fields = mine ? Users.fields : Fixes.EDITABLE;
     const lab = k => (Users.LABELS && Users.LABELS[k]) || (Fixes.LABELS && Fixes.LABELS[k]) || k;
     $('#cardBody').innerHTML = `<h2>Edit</h2><p class="note">${mine ? 'This is your item. It stays when you import a new CSV.' : "Your changes go to My Fixes (Data). The supplier's value is kept too."}</p>` +
-      fields.map(k => `<label class="ed">${esc(lab(k))}<input data-ek="${k}" value="${esc(r[k] || '')}"></label>`).join('') + customEdit(r);
+      fields.map(k => `<label class="ed">${esc(lab(k))}<input data-ek="${k}" value="${esc(r[k] || '')}"></label>`).join('');
     $('#cardFoot').innerHTML = `<button id="cCancel">Cancel</button><button id="cSave" class="primary">Save</button>`;
   }
   function draw() { if (!cur) return; editing ? edit(cur) : view(cur); $('#card').scrollTop = 0; }
   function open(r) { cur = r; editing = false; draw(); const w = $('#cardWrap'); w.hidden = false; requestAnimationFrame(() => w.classList.add('up')); $('#card').scrollTop = 0; document.body.classList.add('carded'); }
   function close() { const w = $('#cardWrap'); w.classList.remove('up'); $('#card').style.transform = ''; document.body.classList.remove('carded'); setTimeout(() => { if (!w.classList.contains('up')) w.hidden = true; }, 220); cur = null; }
-  async function saveCustom(r) { for (const i of document.querySelectorAll('#cardBody [data-ck]')) await Custom.setVal(r.id, i.dataset.ck, i.value); }
   function init() {
     $('#cardBack').onclick = close; $('#cX').onclick = close;
     $('#cardFoot').addEventListener('click', async e => {
@@ -99,7 +95,7 @@
       if (t.id === 'cSave') {
         if (Users.isMine(r)) { const o = {}; document.querySelectorAll('#cardBody [data-ek]').forEach(i => { o[i.dataset.ek] = i.value; }); await Users.save(r, o); }
         else { for (const i of document.querySelectorAll('#cardBody [data-ek]')) await Fixes.edit(r, i.dataset.ek, i.value); }
-        await saveCustom(r); Lookup.rebuild(Store.st); editing = false; draw(); SheetUI.render();
+        Lookup.rebuild(Store.st); editing = false; draw(); SheetUI.render();
       }
     });
     $('#cardFoot').addEventListener('change', async e => { if (e.target.id === 'cStock' && cur) { const r = cur; await Stock.set(r, e.target.checked); if (cur === r) draw(); SheetUI.render(); } });

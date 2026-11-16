@@ -5,7 +5,7 @@
    - A Reason column no longer means "this whole file is the review file". Every row imports as a normal row; only rows whose
      Reason cell is filled are marked Needs review. Old files without Reason import with no marks.
    - Importing a catalog file REPLACES the loaded catalog (all earlier CSV rows, including old v3.8–v3.9-6 'review:' rows).
-     Your own items (fromCsv 'mine'), in-stock list, hidden rows, custom columns and pending My Fixes are kept.
+     Your own items (fromCsv 'mine'), in-stock list, hidden rows and pending My Fixes are kept.
    - "When the data was pulled": a Data_Pulled column (2026-11 = November 2026, or a bare year 2026), or a metadata line before the header: # Data_Pulled: 2026-11.
      Missing = shown as Unknown.
    - Export writes the loaded file's own columns back (with your applied changes, and Reason blank on rows you Confirmed ✓).
@@ -70,12 +70,11 @@
       marked: uniq.filter(r => r.review).length };
   }
   const isCsvRow = r => (r.fromCsv === 'main' || r.fromCsv === 'review') && !(G.Users && Users.isMine(r));
-  // v3.8–v3.9-6 kept review rows as 'review:'+id; move hidden marks and custom values over to the plain id
+  // v3.8–v3.9-6 kept review rows as 'review:'+id; move hidden marks over to the plain id
   async function remapOldIds(keep) {
-    const hid = G.Hidden ? Hidden.raw() : {}, vals = G.Custom ? Custom.rawVals() : {}; let ch = false;
+    const hid = G.Hidden ? Hidden.raw() : {}; let ch = false;
     Object.keys(hid).forEach(k => { if (k.startsWith('review:') && keep.has(k.slice(7))) { hid[k.slice(7)] = hid[k]; delete hid[k]; ch = true; } });
-    Object.keys(vals).forEach(k => { if (k.startsWith('review:') && keep.has(k.slice(7))) { vals[k.slice(7)] = Object.assign({}, vals[k], vals[k.slice(7)] || {}); delete vals[k]; ch = true; } });
-    if (ch) { if (G.Hidden) await Hidden.replaceAll(hid); if (G.Custom) await Custom.replaceAll(Custom.rawCols(), vals); }
+    if (ch && G.Hidden) await Hidden.replaceAll(hid);
   }
   // opts.applyFixes: true = put pending My Fixes on top of the new file, false = load the file as it is (fixes stay listed for export)
   async function importClean(name, parsedOrPrep, opts) {
@@ -96,7 +95,7 @@
     Lookup.rebuild(Store.st);
     await Store.save(); document.body.dataset.lastFixResult = JSON.stringify(fx || {}); return rows.length;
   }
-  // Empty (v3.9-9; was Remove file): takes the loaded catalog out. Your items, stock, hidden rows, custom columns and My Fixes stay.
+  // Empty (v3.9-9; was Remove file): takes the loaded catalog out. Your items, stock, hidden rows and My Fixes stay.
   async function removeLoaded() {
     const ids = Store.st.catalog.filter(isCsvRow).map(r => r.id), n = ids.length;
     Store.remove('catalog', ids); Store.remove('files', Store.st.files.filter(f => !!f.csv).map(f => f.id));

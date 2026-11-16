@@ -35,7 +35,6 @@
     const inv = Store.st.inventory.filter(it => it.ref && refs.has(it.ref)).map(it => it.id);
     if (inv.length) Store.remove('inventory', inv);
     if (G.Hidden) await Hidden.drop(rows.map(r => r.id));
-    if (G.Custom) await Custom.dropRows(rows.map(r => r.id));
     Lookup.rebuild(Store.st);
     try { await Store.save(); } catch (e) { U.toast('Save failed: ' + e.message, true, 8000); }
   }

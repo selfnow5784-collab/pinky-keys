@@ -1,9 +1,8 @@
-/* ui-data.js (v3.9-9) — Data tab = one catalog file, like one tape in a player:
+/* ui-data.js (v3.9-10) — Data tab = one catalog file, like one tape in a player:
    Import new CSV, a box with the loaded file, and its basic info (rows, month/year the data was pulled, sources, rows still
    marked Needs review). Export catalog. v3.9-9: Empty (beside Import) = the same replace flow, but loads nothing.
    Replacing the file offers to save a copy of the current catalog first (with your changes), and only asks about My Fixes
-   when some are not already in the new file. Import never wipes stock, user rows, hidden ids or custom columns.
-   Custom columns are managed from the Columns drop-down in the menu (rename/delete helpers live here). */
+   when some are not already in the new file. Import never wipes stock, user rows or hidden ids. */
 (function (G) {
   'use strict';
   const { $, esc } = U;
@@ -57,13 +56,13 @@
     bump('imported'); document.body.dataset.lastImport = n; return n;
   }
   // Empty: like importing a file that has nothing in it. Same question as Replace; then the catalog is unloaded.
-  // Your in-stock list, your own items, My Fixes, hidden rows, custom columns and settings stay.
+  // Your in-stock list, your own items, My Fixes, hidden rows and settings stay.
   async function emptyCatalog() {
     if (!hasLoaded()) return 0;
     const cur = CatalogFile.loadedFile(), curN = CatalogFile.csvRows().length;
     const v = await U.dialog('Empty the app?', `<p>Loaded now: <b>${esc((cur && cur.name) || 'catalog')}</b> (${curN.toLocaleString()} rows). Empty unloads it and loads nothing, so the sheet is blank until you import a file.</p>
       <p>Save a copy of the current catalog first? The copy includes the changes already in it (your fixes and Confirmed ✓ marks).</p>
-      <p class="note">Your in-stock list, your own items, My Fixes, hidden rows, custom columns and settings stay.</p>`,
+      <p class="note">Your in-stock list, your own items, My Fixes, hidden rows and settings stay.</p>`,
       [{ label: 'Cancel', value: null }, { label: 'Empty without saving', value: 'empty' }, { label: 'Save copy, then empty', cls: 'primary', value: 'save' }]);
     if (!v) { bump('emptyCancelled'); return 0; }
     if (v === 'save') CatalogFile.exportClean('copy');
@@ -125,24 +124,6 @@
     const v = await p; d.classList.remove('wide'); b.onclick = null;
     if (v === 'all') { await Hidden.restore(); renderCounts(); SheetUI.refresh(); }
   }
-  async function addColumn() {
-    const v = await U.dialog('Add column', '<label class="ed">Name<input id="ccName" placeholder="e.g. Bin location, Cost" autocomplete="off"></label>', [{ label: 'Cancel', value: null }, { label: 'Add', cls: 'primary', value: () => ($('#ccName') || {}).value }]);
-    if (v == null) return;
-    const c = await Custom.add(v); if (!c) return U.toast('Give the column a name that is not already used', true);
-    if (G.MenuUI) MenuUI.render(); SheetUI.render();
-  }
-  async function renameColumn(id) {
-    const cur = Custom.list().find(c => c.id === id); if (!cur) return;
-    const v = await U.dialog('Rename column', `<label class="ed">Name<input id="ccName" value="${esc(cur.label)}" autocomplete="off"></label>`, [{ label: 'Cancel', value: null }, { label: 'Rename', cls: 'primary', value: () => ($('#ccName') || {}).value }]);
-    if (v == null) return;
-    if (!await Custom.rename(id, v)) return U.toast('Give the column a name that is not already used', true);
-    if (G.MenuUI) MenuUI.render(); SheetUI.render();
-  }
-  async function deleteColumn(id) {
-    const cur = Custom.list().find(c => c.id === id); if (!cur) return;
-    if (!await U.confirmBox('Delete column?', `Delete "${cur.label}" and its values on every row?`, 'Delete')) return;
-    await Custom.remove(id); if (G.MenuUI) MenuUI.render(); SheetUI.render();
-  }
   function exportCatalog() { const n = CatalogFile.exportClean(); if (!n) U.toast('No catalog to export', true); return n; }
   function openHelp() {
     const html = $('#helpText') ? $('#helpText').innerHTML : (document.querySelector('.help') ? document.querySelector('.help').innerHTML : '');
@@ -154,5 +135,5 @@
     if ($('#emptyBtn')) $('#emptyBtn').onclick = () => emptyCatalog();
     renderFiles(); renderPrefs();
   }
-  G.DataUI = { init, renderFiles, renderPrefs, renderFixCount: renderCounts, renderCounts, importFile, importCatalog, emptyCatalog, commit, openHidden, openHelp, addColumn, renameColumn, deleteColumn, exportCatalog, info };
+  G.DataUI = { init, renderFiles, renderPrefs, renderFixCount: renderCounts, renderCounts, importFile, importCatalog, emptyCatalog, commit, openHidden, openHelp, exportCatalog, info };
 })(window);

@@ -22,5 +22,6 @@
   function clear(s) { const tx = db.transaction(s, 'readwrite'); tx.objectStore(s).clear(); return done(tx); }
   const getMeta = k => new Promise(res => { const r = db.transaction('meta').objectStore('meta').get(k); r.onsuccess = () => res(r.result ? r.result.v : undefined); r.onerror = () => res(undefined); });
   function setMeta(k, v) { const tx = db.transaction('meta', 'readwrite'); tx.objectStore('meta').put({ key: k, v }); return done(tx); }
-  G.DB = { open, all, write, clear, getMeta, setMeta, STORES };
+  function delMeta(k) { const tx = db.transaction('meta', 'readwrite'); tx.objectStore('meta').delete(k); return done(tx); }
+  G.DB = { open, all, write, clear, getMeta, setMeta, delMeta, STORES };
 })(window);
