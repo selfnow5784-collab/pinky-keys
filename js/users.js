@@ -55,6 +55,9 @@
     Store.st.inventory.slice().forEach(it => {
       if (haveInv.has(it.id)) return;
       if (it.ref && catalogRefs.has(it.ref)) return;
+      // v3.9-9: with no catalog loaded (after Empty), keep In-stock ticks as they are, waiting for the next import,
+      // instead of turning each one into a "My item" row (that lost the tick when the catalog came back)
+      if (it.ref && it.noInfer && G.CatalogFile && !CatalogFile.csvRows().length) return;
       const fits = (it.fits && it.fits.length) ? it.fits : [null];
       const rows = fits.map(f => rowFromInv(it, f));
       Store.add('catalog', rows);

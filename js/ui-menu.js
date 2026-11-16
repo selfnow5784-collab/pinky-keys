@@ -1,4 +1,4 @@
-/* ui-menu.js (v3.9-8) — classic menu bar on wide screens; a single ☰ menu on phones with the same items.
+/* ui-menu.js (v3.9-9) — classic menu bar on wide screens; a single ☰ menu on phones with the same items.
    File: Print, Share (PDF of the current view), Auto-save settings, Save current settings.
    View: Row size (Compact / Expanded), Theme (Dark, Light, Alternating white/gray, Alternating black/gray),
          Interface (scroll-to-top button), Hidden rows.
@@ -77,7 +77,7 @@
     if (k === 'fab') { await Store.setPref('fab', Store.prefs.fab === false); return; }
     if (k === 'hidden') { App.show('data'); return DataUI.openHidden(); }
     if (k === 'help') return DataUI.openHelp();
-    if (k === 'about') return U.dialog("Pinky's Auto Reference and Inventory", '<p>Version 3.9-8. Offline key reference and in-stock lookup for Pinky\'s Locksmithing.</p>', [{ label: 'Close', value: true }]);
+    if (k === 'about') return U.dialog("Pinky's Auto Reference and Inventory", '<p>Version 3.9-9. Offline key reference and in-stock lookup for Pinky\'s Locksmithing.</p>', [{ label: 'Close', value: true }]);
   }
   function init() {
     $('#mBtn').onclick = e => { e.stopPropagation(); open = (open === 'phone') ? '' : 'phone'; if (!open) sub = ''; render(); };

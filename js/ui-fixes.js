@@ -1,4 +1,4 @@
-/* ui-fixes.js (v3.9-7) — "My Fixes" pop-up (Settings / Data tab): a basic sheet of the items you reviewed/edited, changed values highlighted
+/* ui-fixes.js (v3.9-7) — "My Fixes" pop-up (Data tab): a basic sheet of the items you reviewed/edited, changed values highlighted
    (original shown under it), flagged fields when a newer supplier CSV changed the same value, and Export CSV to send in. */
 (function (G) {
   'use strict';

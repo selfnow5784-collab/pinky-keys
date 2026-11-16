@@ -96,7 +96,7 @@
     Lookup.rebuild(Store.st);
     await Store.save(); document.body.dataset.lastFixResult = JSON.stringify(fx || {}); return rows.length;
   }
-  // Remove file: takes the loaded catalog out. Your items, stock, hidden rows, custom columns and My Fixes stay.
+  // Empty (v3.9-9; was Remove file): takes the loaded catalog out. Your items, stock, hidden rows, custom columns and My Fixes stay.
   async function removeLoaded() {
     const ids = Store.st.catalog.filter(isCsvRow).map(r => r.id), n = ids.length;
     Store.remove('catalog', ids); Store.remove('files', Store.st.files.filter(f => !!f.csv).map(f => f.id));

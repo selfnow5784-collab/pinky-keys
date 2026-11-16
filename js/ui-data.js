@@ -1,6 +1,6 @@
-/* ui-data.js (v3.9-7) — Settings / Data tab = one catalog file, like one tape in a player:
+/* ui-data.js (v3.9-9) — Data tab = one catalog file, like one tape in a player:
    Import new CSV, a box with the loaded file, and its basic info (rows, month/year the data was pulled, sources, rows still
-   marked Needs review). Export catalog. Tucked under More: Remove file and Erase all data.
+   marked Needs review). Export catalog. v3.9-9: Empty (beside Import) = the same replace flow, but loads nothing.
    Replacing the file offers to save a copy of the current catalog first (with your changes), and only asks about My Fixes
    when some are not already in the new file. Import never wipes stock, user rows, hidden ids or custom columns.
    Custom columns are managed from the Columns drop-down in the menu (rename/delete helpers live here). */
@@ -56,14 +56,18 @@
     renderFiles(); renderCounts(); SheetUI.refresh();
     bump('imported'); document.body.dataset.lastImport = n; return n;
   }
-  async function removeFile() {
-    if (!hasLoaded()) return;
-    const cur = CatalogFile.loadedFile();
-    const v = await U.dialog('Remove the loaded file?', `<p><b>${esc((cur && cur.name) || 'catalog')}</b> (${CatalogFile.csvRows().length.toLocaleString()} rows) will be taken out of the app.</p><p>Your in-stock list, your own items, My Fixes, hidden rows and custom columns stay.</p>`,
-      [{ label: 'Cancel', value: null }, { label: 'Save copy, then remove', value: 'save' }, { label: 'Remove', cls: 'danger', value: 'rm' }]);
-    if (!v) return;
+  // Empty: like importing a file that has nothing in it. Same question as Replace; then the catalog is unloaded.
+  // Your in-stock list, your own items, My Fixes, hidden rows, custom columns and settings stay.
+  async function emptyCatalog() {
+    if (!hasLoaded()) return 0;
+    const cur = CatalogFile.loadedFile(), curN = CatalogFile.csvRows().length;
+    const v = await U.dialog('Empty the app?', `<p>Loaded now: <b>${esc((cur && cur.name) || 'catalog')}</b> (${curN.toLocaleString()} rows). Empty unloads it and loads nothing, so the sheet is blank until you import a file.</p>
+      <p>Save a copy of the current catalog first? The copy includes the changes already in it (your fixes and Confirmed ✓ marks).</p>
+      <p class="note">Your in-stock list, your own items, My Fixes, hidden rows, custom columns and settings stay.</p>`,
+      [{ label: 'Cancel', value: null }, { label: 'Empty without saving', value: 'empty' }, { label: 'Save copy, then empty', cls: 'primary', value: 'save' }]);
+    if (!v) { bump('emptyCancelled'); return 0; }
     if (v === 'save') CatalogFile.exportClean('copy');
-    await CatalogFile.removeLoaded(); renderFiles(); renderCounts(); SheetUI.refresh(); bump('removed');
+    const n = await CatalogFile.removeLoaded(); renderFiles(); renderCounts(); SheetUI.refresh(); bump('emptied'); return n;
   }
   function commit(kind, name, a, mode) {
     if (mode === 'replace') { Store.replaceKind(kind); Store.st.files.filter(f => f.kind === kind).forEach(f => Store.remove('files', [f.id])); }
@@ -96,7 +100,7 @@
         </dl>`;
     }
     const has = I.rows > 0; const exp = $('#expCat'); if (exp) exp.hidden = !has;
-    const rm = $('#rmFile'); if (rm) rm.disabled = !has && !I.files.length;
+    const em = $('#emptyBtn'); if (em) em.disabled = !has && !I.files.length;
   }
   function renderPrefs() {
     renderCounts();
@@ -147,9 +151,8 @@
   function init() {
     $('#impFile').addEventListener('change', async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { await importFile(f, 'auto'); } catch (err) { U.toast('Import failed: ' + err.message, true, 8000); } });
     const exp = $('#expCat'); if (exp) exp.onclick = () => exportCatalog();
-    if ($('#rmFile')) $('#rmFile').onclick = () => removeFile();
-    if ($('#resetAll')) $('#resetAll').onclick = async () => { if (!await U.confirmBox('Erase everything?', 'Delete ALL data on this phone, including the loaded file, stock, My Fixes, your items, hidden rows and custom columns? Export the catalog and My Fixes first if you need them.', 'Erase')) return; ['catalog', 'vehicles', 'inventory', 'files'].forEach(k => Store.replaceKind(k)); await Fixes.replaceAll({}); await Hidden.replaceAll({}); await Custom.replaceAll([], {}); await Store.save(); Lookup.rebuild(Store.st); renderFiles(); renderCounts(); SheetUI.refresh(); };
+    if ($('#emptyBtn')) $('#emptyBtn').onclick = () => emptyCatalog();
     renderFiles(); renderPrefs();
   }
-  G.DataUI = { init, renderFiles, renderPrefs, renderFixCount: renderCounts, renderCounts, importFile, importCatalog, removeFile, commit, openHidden, openHelp, addColumn, renameColumn, deleteColumn, exportCatalog, info };
+  G.DataUI = { init, renderFiles, renderPrefs, renderFixCount: renderCounts, renderCounts, importFile, importCatalog, emptyCatalog, commit, openHidden, openHelp, addColumn, renameColumn, deleteColumn, exportCatalog, info };
 })(window);
